@@ -1,4 +1,9 @@
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || '';
+const configuredBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+const BASE_URL = configuredBaseUrl
+  ? configuredBaseUrl
+  : import.meta.env.DEV
+  ? 'http://localhost:3001'
+  : '';
 
 export class ApiError extends Error {
   constructor(

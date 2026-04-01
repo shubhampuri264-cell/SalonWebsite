@@ -23,7 +23,7 @@ export function updateAppointmentStatus(
   status: AppointmentStatus,
   token: string
 ): Promise<Appointment> {
-  return apiFetch<Appointment>(`/api/admin/appointments/${id}`, {
+  return apiFetch<Appointment>(`/api/admin/appointments?id=${id}`, {
     method: 'PATCH',
     body: JSON.stringify({ status }),
     token,
@@ -31,7 +31,7 @@ export function updateAppointmentStatus(
 }
 
 export function deleteAppointment(id: string, token: string): Promise<void> {
-  return apiFetch<void>(`/api/admin/appointments/${id}`, {
+  return apiFetch<void>(`/api/admin/appointments?id=${id}`, {
     method: 'DELETE',
     token,
   });
@@ -61,7 +61,7 @@ export function getBlockedSlots(
 }
 
 export function deleteBlockedSlot(id: string, token: string): Promise<void> {
-  return apiFetch<void>(`/api/admin/blocked-slots/${id}`, {
+  return apiFetch<void>(`/api/admin/blocked-slots?id=${id}`, {
     method: 'DELETE',
     token,
   });

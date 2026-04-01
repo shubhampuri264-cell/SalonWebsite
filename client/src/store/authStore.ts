@@ -1,11 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { createClient, type Session } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL as string,
-  import.meta.env.VITE_SUPABASE_ANON_KEY as string
-);
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from '@/api/supabase';
 
 interface AuthState {
   session: Session | null;
