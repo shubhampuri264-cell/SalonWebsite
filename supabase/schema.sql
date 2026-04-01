@@ -80,33 +80,55 @@ ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE blocked_slots ENABLE ROW LEVEL SECURITY;
 
--- Stylists: public read (active only), authenticated full CRUD
+-- Helper: owner admin check
+-- Change this email if ownership changes.
+CREATE OR REPLACE FUNCTION public.is_owner_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT
+    auth.role() = 'authenticated'
+    AND lower(coalesce(auth.jwt()->>'email', '')) = lower('sumipuri34@gmail.com');
+$$;
+
+-- Drop old permissive policies before applying locked-down ones
+DROP POLICY IF EXISTS "Authenticated users can manage stylists" ON stylists;
+DROP POLICY IF EXISTS "Authenticated users can manage services" ON services;
+DROP POLICY IF EXISTS "Authenticated users can manage appointments" ON appointments;
+DROP POLICY IF EXISTS "Authenticated users can manage blocked_slots" ON blocked_slots;
+
+-- Stylists: public read (active only), owner-only full CRUD
 CREATE POLICY "Public can read active stylists"
   ON stylists FOR SELECT
   USING (is_active = TRUE);
 
-CREATE POLICY "Authenticated users can manage stylists"
+CREATE POLICY "Owner can manage stylists"
   ON stylists FOR ALL
-  USING (auth.role() = 'authenticated');
+  USING (public.is_owner_admin())
+  WITH CHECK (public.is_owner_admin());
 
--- Services: public read (active only), authenticated full CRUD
+-- Services: public read (active only), owner-only full CRUD
 CREATE POLICY "Public can read active services"
   ON services FOR SELECT
   USING (is_active = TRUE);
 
-CREATE POLICY "Authenticated users can manage services"
+CREATE POLICY "Owner can manage services"
   ON services FOR ALL
-  USING (auth.role() = 'authenticated');
+  USING (public.is_owner_admin())
+  WITH CHECK (public.is_owner_admin());
 
--- Appointments: no public access (server uses service role key)
-CREATE POLICY "Authenticated users can manage appointments"
+-- Appointments: owner-only direct access (API uses service role key server-side)
+CREATE POLICY "Owner can manage appointments"
   ON appointments FOR ALL
-  USING (auth.role() = 'authenticated');
+  USING (public.is_owner_admin())
+  WITH CHECK (public.is_owner_admin());
 
--- Blocked slots: no public access
-CREATE POLICY "Authenticated users can manage blocked_slots"
+-- Blocked slots: owner-only direct access
+CREATE POLICY "Owner can manage blocked_slots"
   ON blocked_slots FOR ALL
-  USING (auth.role() = 'authenticated');
+  USING (public.is_owner_admin())
+  WITH CHECK (public.is_owner_admin());
 
 -- 4. ATOMIC BOOKING RPC
 -- Prevents double-booking via interval overlap check + row lock

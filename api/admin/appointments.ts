@@ -1,20 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabaseAdmin } from '../lib/supabase';
-import jwt from 'jsonwebtoken';
-
-function verifyAuth(req: VercelRequest): boolean {
-  const auth = req.headers.authorization;
-  if (!auth?.startsWith('Bearer ')) return false;
-  try {
-    jwt.verify(auth.slice(7), process.env.SUPABASE_JWT_SECRET!);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { verifyAdminAuth } from '../lib/auth';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!verifyAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
+  if (!verifyAdminAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
 
   if (req.method === 'GET') return handleGet(req, res);
   if (req.method === 'PATCH') return handlePatch(req, res);
