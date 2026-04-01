@@ -38,7 +38,7 @@ export async function sendBookingConfirmationSms(
   const cancelUrl = `${env.CLIENT_URL}/booking/cancel?token=${appointment.cancellation_token}`;
   await sendSms(
     appointment.client_phone,
-    `Luxe Threads: Your ${serviceName} appointment on ${appointment.appointment_date} at ${appointment.appointment_time} is confirmed! Cancel: ${cancelUrl}`
+    `Icon Studio: Your ${serviceName} appointment on ${appointment.appointment_date} at ${appointment.appointment_time} is confirmed! Cancel: ${cancelUrl}`
   );
 }
 
@@ -50,7 +50,7 @@ export async function sendReminderSms(
 
   await sendSms(
     appointment.client_phone,
-    `Luxe Threads reminder: Your ${serviceName} appointment is tomorrow at ${appointment.appointment_time}. 123 Rose Gold Ave, NYC.`
+    `Icon Studio reminder: Your ${serviceName} appointment is tomorrow at ${appointment.appointment_time}. 123 Rose Gold Ave, NYC.`
   );
 }
 
@@ -61,6 +61,6 @@ export async function sendCancellationSms(
 
   await sendSms(
     appointment.client_phone,
-    `Luxe Threads: Your appointment on ${appointment.appointment_date} at ${appointment.appointment_time} has been cancelled. Book again at ${env.CLIENT_URL}/book`
+    `Icon Studio: Your appointment on ${appointment.appointment_date} at ${appointment.appointment_time} has been cancelled. Book again at ${env.CLIENT_URL}/book`
   );
 }

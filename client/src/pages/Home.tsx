@@ -29,12 +29,12 @@ export default function Home() {
   return (
     <>
       <Helmet>
-        <title>Luxe Threads | Hair Salon & Threading Studio NYC</title>
+        <title>Icon Studio | Hair Salon & Threading Studio NYC</title>
         <meta
           name="description"
-          content="Luxe Threads is a boutique hair salon and eyebrow threading studio in New York City. Book online 24/7."
+          content="Icon Studio is a boutique hair salon and eyebrow threading studio in New York City. Book online 24/7."
         />
-        <meta property="og:title" content="Luxe Threads | Hair Salon & Threading Studio" />
+        <meta property="og:title" content="Icon Studio | Hair Salon & Threading Studio" />
         <meta
           property="og:description"
           content="Boutique salon offering precision cuts, balayage, and eyebrow threading in NYC. Book your appointment today."
@@ -54,7 +54,7 @@ export default function Home() {
             Artistry
           </h1>
           <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-            Luxe Threads is a boutique salon and threading studio in the heart of New York City,
+            Icon Studio is a boutique salon and threading studio in the heart of New York City,
             offering precision cuts, vibrant color, and expert threading services.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">

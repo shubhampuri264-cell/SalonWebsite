@@ -45,10 +45,10 @@ export default function Gallery() {
   return (
     <>
       <Helmet>
-        <title>Gallery | Luxe Threads</title>
+        <title>Gallery | Icon Studio</title>
         <meta
           name="description"
-          content="Browse our gallery of hair and threading transformations at Luxe Threads."
+          content="Browse our gallery of hair and threading transformations at Icon Studio."
         />
       </Helmet>
 

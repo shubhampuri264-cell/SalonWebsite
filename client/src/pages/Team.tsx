@@ -18,10 +18,10 @@ export default function Team() {
   return (
     <>
       <Helmet>
-        <title>Our Team | Luxe Threads</title>
+        <title>Our Team | Icon Studio</title>
         <meta
           name="description"
-          content="Meet the talented stylists and threading specialists at Luxe Threads."
+          content="Meet the talented stylists and threading specialists at Icon Studio."
         />
       </Helmet>
 

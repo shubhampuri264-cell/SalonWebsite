@@ -44,7 +44,7 @@ export default function Navbar() {
           className="flex items-center gap-2 font-serif text-xl font-semibold tracking-wide text-rose-600"
         >
           <Scissors className="h-5 w-5 text-gold-500" aria-hidden="true" />
-          Luxe Threads
+          Icon Studio
         </Link>
 
         {/* Desktop nav */}

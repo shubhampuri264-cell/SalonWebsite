@@ -76,7 +76,7 @@ export const useBookingStore = create<BookingState>()(
         }),
     }),
     {
-      name: 'luxe-booking-wizard',
+      name: 'icon-booking-wizard',
       storage: createJSONStorage(() => sessionStorage),
     }
   )

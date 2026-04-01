@@ -9,10 +9,10 @@ export default function Location() {
   return (
     <>
       <Helmet>
-        <title>Location & Hours | Luxe Threads</title>
+        <title>Location & Hours | Icon Studio</title>
         <meta
           name="description"
-          content={`Visit Luxe Threads at ${SALON_INFO.address}. Open Monday–Saturday.`}
+          content={`Visit Icon Studio at ${SALON_INFO.address}. Open Monday–Saturday.`}
         />
       </Helmet>
 
@@ -30,7 +30,7 @@ export default function Location() {
           {/* Map */}
           <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
             <iframe
-              title="Luxe Threads location map"
+              title="Icon Studio location map"
               src={
                 googleMapsApiKey
                   ? `https://www.google.com/maps/embed/v1/place?key=${googleMapsApiKey}&q=${encodedAddress}`

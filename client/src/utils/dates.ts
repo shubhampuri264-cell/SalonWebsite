@@ -45,10 +45,10 @@ export const HOURS_DISPLAY: Array<{ day: string; hours: string }> = [
 ];
 
 export const SALON_INFO = {
-  name: 'Luxe Threads',
+  name: 'Icon Studio',
   address: '123 Rose Gold Ave, New York, NY 10001',
   phone: '(212) 555-0100',
-  email: 'hello@luxethreads.com',
-  instagram: 'https://instagram.com/luxethreads',
-  facebook: 'https://facebook.com/luxethreads',
+  email: 'hello@iconstudionyc.com',
+  instagram: 'https://instagram.com/iconstudionyc',
+  facebook: 'https://facebook.com/iconstudionyc',
 } as const;

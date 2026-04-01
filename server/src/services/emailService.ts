@@ -4,7 +4,7 @@ import type { Appointment } from '@luxe/shared';
 
 const resend = new Resend(env.RESEND_API_KEY);
 
-const FROM_ADDRESS = 'Luxe Threads <noreply@luxethreads.com>';
+const FROM_ADDRESS = 'Icon Studio <noreply@iconstudionyc.com>';
 
 function formatDateTime(date: string, time: string): string {
   const [year, month, day] = date.split('-').map(Number);
@@ -35,10 +35,10 @@ export async function sendBookingConfirmation(
   await resend.emails.send({
     from: FROM_ADDRESS,
     to: appointment.client_email,
-    subject: 'Your Luxe Threads Appointment is Confirmed!',
+    subject: 'Your Icon Studio Appointment is Confirmed!',
     html: `
       <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #333;">
-        <h1 style="color: #C9757A;">Luxe Threads</h1>
+        <h1 style="color: #C9757A;">Icon Studio</h1>
         <h2>Appointment Confirmed ✓</h2>
         <p>Hi ${appointment.client_name},</p>
         <p>Your appointment has been confirmed. Here are the details:</p>
@@ -54,7 +54,7 @@ export async function sendBookingConfirmation(
           <a href="${cancelUrl}" style="color: #C9757A;">Click here to cancel your appointment</a>
         </p>
         <p style="color: #888; font-size: 12px; margin-top: 32px;">
-          Luxe Threads · 123 Rose Gold Ave, New York, NY 10001 · (212) 555-0100
+          Icon Studio · 123 Rose Gold Ave, New York, NY 10001 · (212) 555-0100
         </p>
       </div>
     `,
@@ -101,10 +101,10 @@ export async function sendCancellationConfirmation(
   await resend.emails.send({
     from: FROM_ADDRESS,
     to: appointment.client_email,
-    subject: 'Your Luxe Threads Appointment Has Been Cancelled',
+    subject: 'Your Icon Studio Appointment Has Been Cancelled',
     html: `
       <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #333;">
-        <h1 style="color: #C9757A;">Luxe Threads</h1>
+        <h1 style="color: #C9757A;">Icon Studio</h1>
         <h2>Appointment Cancelled</h2>
         <p>Hi ${appointment.client_name},</p>
         <p>Your appointment for <strong>${serviceName}</strong> on ${appointment.appointment_date} at ${appointment.appointment_time} has been cancelled.</p>
@@ -112,7 +112,7 @@ export async function sendCancellationConfirmation(
           <a href="${env.CLIENT_URL}/book" style="color: #C9757A;">Book a new appointment</a>
         </p>
         <p style="color: #888; font-size: 12px; margin-top: 32px;">
-          Luxe Threads · 123 Rose Gold Ave, New York, NY 10001 · (212) 555-0100
+          Icon Studio · 123 Rose Gold Ave, New York, NY 10001 · (212) 555-0100
         </p>
       </div>
     `,
@@ -132,10 +132,10 @@ export async function sendReminderEmail(
   await resend.emails.send({
     from: FROM_ADDRESS,
     to: appointment.client_email,
-    subject: 'Reminder: Your Luxe Threads Appointment is Tomorrow',
+    subject: 'Reminder: Your Icon Studio Appointment is Tomorrow',
     html: `
       <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #333;">
-        <h1 style="color: #C9757A;">Luxe Threads</h1>
+        <h1 style="color: #C9757A;">Icon Studio</h1>
         <h2>Appointment Reminder</h2>
         <p>Hi ${appointment.client_name},</p>
         <p>Just a reminder that your appointment is tomorrow:</p>
@@ -146,7 +146,7 @@ export async function sendReminderEmail(
         </table>
         <p><strong>Address:</strong> 123 Rose Gold Ave, New York, NY 10001</p>
         <p style="color: #888; font-size: 12px; margin-top: 32px;">
-          Luxe Threads · 123 Rose Gold Ave, New York, NY 10001 · (212) 555-0100
+          Icon Studio · 123 Rose Gold Ave, New York, NY 10001 · (212) 555-0100
         </p>
       </div>
     `,

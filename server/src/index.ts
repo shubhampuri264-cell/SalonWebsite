@@ -1,4 +1,6 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import { env } from './config/env';
 import { createApp } from './app';
 import { startReminderService } from './services/reminderService';
@@ -7,7 +9,7 @@ const app = createApp();
 const port = Number(env.PORT);
 
 app.listen(port, () => {
-  console.log(`✓ Luxe Threads API running on http://localhost:${port}`);
+  console.log(`✓ Icon Studio API running on http://localhost:${port}`);
   console.log(`  Environment: ${env.NODE_ENV}`);
   console.log(`  CORS origin: ${env.CLIENT_URL}`);
 

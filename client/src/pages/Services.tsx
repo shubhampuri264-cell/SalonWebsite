@@ -19,7 +19,7 @@ export default function Services() {
   return (
     <>
       <Helmet>
-        <title>Services | Luxe Threads</title>
+        <title>Services | Icon Studio</title>
         <meta
           name="description"
           content="Browse our full menu of hair and threading services including balayage, highlights, eyebrow threading, and more."

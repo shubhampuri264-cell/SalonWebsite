@@ -43,7 +43,7 @@ export default function AdminLogin() {
             <Scissors className="h-6 w-6 text-rose-600" aria-hidden="true" />
           </div>
           <h1 className="mt-3 font-serif text-2xl font-semibold">Admin Login</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Luxe Threads Dashboard</p>
+          <p className="mt-1 text-sm text-muted-foreground">Icon Studio Dashboard</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">

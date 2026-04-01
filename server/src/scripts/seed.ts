@@ -137,7 +137,7 @@ const services = [
 ];
 
 async function seed() {
-  console.log('🌱 Seeding Luxe Threads database...\n');
+  console.log('🌱 Seeding Icon Studio database...\n');
 
   // Insert stylists
   console.log('Inserting stylists...');

@@ -1,5 +1,5 @@
 -- ============================================================
--- Luxe Threads – Supabase Schema
+-- Icon Studio – Supabase Schema
 -- Run this entire file in the Supabase SQL Editor
 -- ============================================================
 

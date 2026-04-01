@@ -48,7 +48,7 @@ export const useAuthStore = create<AuthState>()(
       clearError: () => set({ error: null }),
     }),
     {
-      name: 'luxe-admin-auth',
+      name: 'icon-admin-auth',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ session: state.session }),
     }

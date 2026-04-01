@@ -29,7 +29,7 @@ export default function AdminDashboard() {
       <aside className="w-60 shrink-0 border-r border-border bg-white">
         <div className="flex h-16 items-center gap-2 border-b border-border px-5">
           <Scissors className="h-5 w-5 text-rose-600" aria-hidden="true" />
-          <span className="font-serif font-semibold text-rose-600">Luxe Threads</span>
+          <span className="font-serif font-semibold text-rose-600">Icon Studio</span>
         </div>
         <nav className="p-3" aria-label="Admin navigation">
           {NAV_ITEMS.map(({ to, icon: Icon, label }) => (

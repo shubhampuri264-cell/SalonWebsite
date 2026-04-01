@@ -14,7 +14,7 @@ export default function Footer() {
               className="flex items-center gap-2 font-serif text-xl font-semibold text-rose-600"
             >
               <Scissors className="h-5 w-5 text-gold-500" aria-hidden="true" />
-              Luxe Threads
+              Icon Studio
             </Link>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
               A boutique hair salon and threading studio in the heart of New York City.
@@ -24,7 +24,7 @@ export default function Footer() {
                 href={SALON_INFO.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Luxe Threads on Instagram"
+                aria-label="Icon Studio on Instagram"
                 className="text-muted-foreground hover:text-rose-600 transition-colors"
               >
                 <Instagram className="h-5 w-5" />
@@ -33,7 +33,7 @@ export default function Footer() {
                 href={SALON_INFO.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Luxe Threads on Facebook"
+                aria-label="Icon Studio on Facebook"
                 className="text-muted-foreground hover:text-rose-600 transition-colors"
               >
                 <Facebook className="h-5 w-5" />
@@ -94,7 +94,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Luxe Threads. All rights reserved.
+          © {new Date().getFullYear()} Icon Studio. All rights reserved.
         </div>
       </div>
     </footer>

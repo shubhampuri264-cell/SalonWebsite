@@ -5,10 +5,10 @@ export default function Book() {
   return (
     <>
       <Helmet>
-        <title>Book an Appointment | Luxe Threads</title>
+        <title>Book an Appointment | Icon Studio</title>
         <meta
           name="description"
-          content="Book your hair salon or threading appointment online at Luxe Threads. Fast, easy, 24/7."
+          content="Book your hair salon or threading appointment online at Icon Studio. Fast, easy, 24/7."
         />
       </Helmet>
 

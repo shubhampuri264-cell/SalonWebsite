@@ -20,7 +20,7 @@ export default function BookingConfirmation() {
   return (
     <>
       <Helmet>
-        <title>Booking Confirmed | Luxe Threads</title>
+        <title>Booking Confirmed | Icon Studio</title>
       </Helmet>
 
       <div className="container mx-auto flex min-h-[60vh] flex-col items-center justify-center px-4 py-16 text-center md:px-6">

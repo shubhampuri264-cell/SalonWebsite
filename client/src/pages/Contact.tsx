@@ -28,10 +28,10 @@ export default function Contact() {
   return (
     <>
       <Helmet>
-        <title>Contact | Luxe Threads</title>
+        <title>Contact | Icon Studio</title>
         <meta
           name="description"
-          content="Get in touch with Luxe Threads. Send us a message or find us on social media."
+          content="Get in touch with Icon Studio. Send us a message or find us on social media."
         />
       </Helmet>
 
