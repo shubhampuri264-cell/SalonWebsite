@@ -6,7 +6,9 @@
  * Replace placeholder data with real content before launch.
  */
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 import { createClient } from '@supabase/supabase-js';
 
 

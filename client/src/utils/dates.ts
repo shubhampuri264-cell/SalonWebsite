@@ -46,9 +46,9 @@ export const HOURS_DISPLAY: Array<{ day: string; hours: string }> = [
 
 export const SALON_INFO = {
   name: 'Icon Studio',
-  address: '123 Rose Gold Ave, New York, NY 10001',
-  phone: '(212) 555-0100',
-  email: 'hello@iconstudionyc.com',
+  address: '39-46 Queens Blvd, Sunnyside, NY 11104',
+  phone: '(718) 255-6940',
+  email: 'sumipuri34@gmail.com',
   instagram: 'https://instagram.com/iconstudionyc',
   facebook: 'https://facebook.com/iconstudionyc',
 } as const;

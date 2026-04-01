@@ -50,7 +50,7 @@ export async function sendReminderSms(
 
   await sendSms(
     appointment.client_phone,
-    `Icon Studio reminder: Your ${serviceName} appointment is tomorrow at ${appointment.appointment_time}. 123 Rose Gold Ave, NYC.`
+    `Icon Studio reminder: Your ${serviceName} appointment is tomorrow at ${appointment.appointment_time}. 39-46 Queens Blvd, Sunnyside, NY.`
   );
 }
 

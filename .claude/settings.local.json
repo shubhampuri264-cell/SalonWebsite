@@ -4,7 +4,11 @@
       "Bash(python3:*)",
       "Bash(python:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(npx tsx:*)",
+      "Bash(node -e \"require\\('dotenv'\\).config\\(\\); console.log\\('URL:', process.env.SUPABASE_URL\\); console.log\\('KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY\\);\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://lvuoijdougbvkuabxris.supabase.co/rest/v1/\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2dW9pamRvdWdidmt1YWJ4cmlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4OTkyNzcsImV4cCI6MjA4NzQ3NTI3N30.CTXrimRbDCgc0DAsXrM2bE0YkcFL-VMg8XHLfkuExEo\")",
+      "Bash(curl -v \"https://lvuoijdougbvkuabxris.supabase.co\")"
     ]
   }
 }

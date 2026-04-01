@@ -69,7 +69,13 @@ appointmentsRouter.post('/', bookingRateLimit, async (req, res, next) => {
     const cancellationToken = generateCancellationToken();
 
     const appointment = await createBooking({
-      ...payload,
+      service_id: payload.service_id,
+      client_name: payload.client_name,
+      client_email: payload.client_email,
+      client_phone: payload.client_phone,
+      appointment_date: payload.appointment_date,
+      appointment_time: payload.appointment_time,
+      notes: payload.notes,
       stylist_id: stylistId,
       duration_min: service.duration_min,
       cancellation_token: cancellationToken,

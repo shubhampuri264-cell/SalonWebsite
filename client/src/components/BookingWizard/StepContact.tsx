@@ -136,7 +136,7 @@ export default function StepContact() {
               {...register('client_phone')}
               id="client_phone"
               type="tel"
-              placeholder="(212) 555-0100"
+              placeholder="(718) 255-6940"
               className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
               aria-invalid={!!errors.client_phone}
             />

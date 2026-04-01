@@ -27,7 +27,11 @@ const result = envSchema.safeParse(process.env);
 if (!result.success) {
   console.error('❌ Invalid environment variables:');
   console.error(result.error.flatten().fieldErrors);
-  process.exit(1);
+  // Only hard-exit in local dev; in serverless, throw so the request gets a 500
+  if (typeof process.env.VERCEL === 'undefined') {
+    process.exit(1);
+  }
+  throw new Error('Missing required environment variables');
 }
 
 export const env = result.data;

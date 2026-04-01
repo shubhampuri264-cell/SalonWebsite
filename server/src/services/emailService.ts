@@ -48,13 +48,13 @@ export async function sendBookingConfirmation(
           <tr><td style="padding: 8px; font-weight: bold;">Date & Time:</td><td style="padding: 8px;">${dateTimeStr}</td></tr>
           <tr><td style="padding: 8px; font-weight: bold;">Booking Ref:</td><td style="padding: 8px;">${appointment.id.slice(0, 8).toUpperCase()}</td></tr>
         </table>
-        <p><strong>Location:</strong> 123 Rose Gold Ave, New York, NY 10001</p>
+        <p><strong>Location:</strong> 39-46 Queens Blvd, Sunnyside, NY 11104</p>
         <p style="margin-top: 24px;">
           Need to cancel?
           <a href="${cancelUrl}" style="color: #C9757A;">Click here to cancel your appointment</a>
         </p>
         <p style="color: #888; font-size: 12px; margin-top: 32px;">
-          Icon Studio · 123 Rose Gold Ave, New York, NY 10001 · (212) 555-0100
+          Icon Studio · 39-46 Queens Blvd, Sunnyside, NY 11104 · (718) 255-6940
         </p>
       </div>
     `,
@@ -112,7 +112,7 @@ export async function sendCancellationConfirmation(
           <a href="${env.CLIENT_URL}/book" style="color: #C9757A;">Book a new appointment</a>
         </p>
         <p style="color: #888; font-size: 12px; margin-top: 32px;">
-          Icon Studio · 123 Rose Gold Ave, New York, NY 10001 · (212) 555-0100
+          Icon Studio · 39-46 Queens Blvd, Sunnyside, NY 11104 · (718) 255-6940
         </p>
       </div>
     `,
@@ -144,9 +144,9 @@ export async function sendReminderEmail(
           <tr><td style="padding: 8px; font-weight: bold;">Stylist:</td><td style="padding: 8px;">${stylistName}</td></tr>
           <tr><td style="padding: 8px; font-weight: bold;">Date & Time:</td><td style="padding: 8px;">${dateTimeStr}</td></tr>
         </table>
-        <p><strong>Address:</strong> 123 Rose Gold Ave, New York, NY 10001</p>
+        <p><strong>Address:</strong> 39-46 Queens Blvd, Sunnyside, NY 11104</p>
         <p style="color: #888; font-size: 12px; margin-top: 32px;">
-          Icon Studio · 123 Rose Gold Ave, New York, NY 10001 · (212) 555-0100
+          Icon Studio · 39-46 Queens Blvd, Sunnyside, NY 11104 · (718) 255-6940
         </p>
       </div>
     `,
