@@ -7,7 +7,7 @@ import { Scissors } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
 const loginSchema = z.object({
-  email: z.string().email('Enter a valid email'),
+  identifier: z.string().min(1, 'Username or email is required'),
   password: z.string().min(1, 'Password is required'),
 });
 
@@ -32,7 +32,7 @@ export default function AdminLogin() {
 
   const onSubmit = async (data: LoginValues) => {
     clearError();
-    await signIn(data.email, data.password);
+    await signIn(data.identifier, data.password);
   };
 
   return (
@@ -44,24 +44,27 @@ export default function AdminLogin() {
           </div>
           <h1 className="mt-3 font-serif text-2xl font-semibold">Admin Login</h1>
           <p className="mt-1 text-sm text-muted-foreground">Icon Studio Dashboard</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Sign in with owner email, or owner username if configured.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
           <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium">
-              Email
+            <label htmlFor="identifier" className="mb-1 block text-sm font-medium">
+              Username or Email
             </label>
             <input
-              {...register('email')}
-              id="email"
-              type="email"
-              autoComplete="email"
+              {...register('identifier')}
+              id="identifier"
+              type="text"
+              autoComplete="username"
               className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400"
-              aria-invalid={!!errors.email}
+              aria-invalid={!!errors.identifier}
             />
-            {errors.email && (
+            {errors.identifier && (
               <p className="mt-1 text-xs text-destructive" role="alert">
-                {errors.email.message}
+                {errors.identifier.message}
               </p>
             )}
           </div>

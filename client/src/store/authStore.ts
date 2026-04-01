@@ -8,10 +8,28 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
 
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (identifier: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   setSession: (session: Session | null) => void;
   clearError: () => void;
+}
+
+function resolveLoginEmail(identifier: string): string {
+  const value = identifier.trim();
+  if (value.includes('@')) return value;
+
+  const ownerUsername = (import.meta.env.VITE_OWNER_USERNAME as string | undefined)?.trim();
+  const ownerEmail = (import.meta.env.VITE_OWNER_EMAIL as string | undefined)?.trim();
+
+  if (
+    ownerUsername &&
+    ownerEmail &&
+    value.toLowerCase() === ownerUsername.toLowerCase()
+  ) {
+    return ownerEmail;
+  }
+
+  return value;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -21,8 +39,9 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
 
-      signIn: async (email, password) => {
+      signIn: async (identifier, password) => {
         set({ isLoading: true, error: null });
+        const email = resolveLoginEmail(identifier);
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,

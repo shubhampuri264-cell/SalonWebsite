@@ -1,7 +1,7 @@
 import { apiFetch } from './client';
 import type { Appointment, AppointmentStatus, BlockedSlot } from '@luxe/shared';
 
-interface AdminAppointment extends Appointment {
+export interface AdminAppointment extends Appointment {
   services: { name: string; category: string } | null;
   stylists: { name: string } | null;
 }
