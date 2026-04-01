@@ -1,9 +1,20 @@
 const configuredBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
-const BASE_URL = configuredBaseUrl
-  ? configuredBaseUrl
-  : import.meta.env.DEV
-  ? 'http://localhost:3001'
-  : '';
+
+function isLocalhostUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
+}
+
+const BASE_URL =
+  configuredBaseUrl && (import.meta.env.DEV || !isLocalhostUrl(configuredBaseUrl))
+    ? configuredBaseUrl
+    : import.meta.env.DEV
+    ? 'http://localhost:3001'
+    : '';
 
 export class ApiError extends Error {
   constructor(
