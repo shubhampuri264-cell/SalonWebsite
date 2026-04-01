@@ -67,22 +67,28 @@ export async function resolveAnyoneStylist(
 
   // Find available stylists for this slot
   const availableIds: string[] = [];
+  const requestedStart = toMinutes(time);
+  const requestedEnd = requestedStart + durationMin;
 
   for (const stylist of stylists) {
-    const { count } = await supabaseAdmin
+    const { data: appointments, error: appointmentsError } = await supabaseAdmin
       .from('appointments')
-      .select('*', { count: 'exact', head: true })
+      .select('appointment_time, duration_min')
       .eq('stylist_id', stylist.id)
       .eq('appointment_date', date)
-      .neq('status', 'cancelled')
-      .filter(
-        'appointment_time',
-        'lt',
-        addMinutesToTime(time, durationMin)
-      )
-      .filter('appointment_time', 'gte', time);
+      .neq('status', 'cancelled');
 
-    if ((count ?? 0) === 0) {
+    if (appointmentsError) {
+      throw new Error(`Failed to load stylist availability: ${appointmentsError.message}`);
+    }
+
+    const hasOverlap = (appointments ?? []).some((appt) => {
+      const existingStart = toMinutes(appt.appointment_time);
+      const existingEnd = existingStart + appt.duration_min;
+      return existingStart < requestedEnd && existingEnd > requestedStart;
+    });
+
+    if (!hasOverlap) {
       availableIds.push(stylist.id);
     }
   }
@@ -101,10 +107,7 @@ export async function resolveAnyoneStylist(
   return availableIds[0];
 }
 
-function addMinutesToTime(time: string, minutes: number): string {
+function toMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number);
-  const total = h * 60 + m + minutes;
-  const newH = Math.floor(total / 60) % 24;
-  const newM = total % 60;
-  return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+  return h * 60 + m;
 }
