@@ -99,32 +99,38 @@ DROP POLICY IF EXISTS "Authenticated users can manage appointments" ON appointme
 DROP POLICY IF EXISTS "Authenticated users can manage blocked_slots" ON blocked_slots;
 
 -- Stylists: public read (active only), owner-only full CRUD
+DROP POLICY IF EXISTS "Public can read active stylists" ON stylists;
 CREATE POLICY "Public can read active stylists"
   ON stylists FOR SELECT
   USING (is_active = TRUE);
 
+DROP POLICY IF EXISTS "Owner can manage stylists" ON stylists;
 CREATE POLICY "Owner can manage stylists"
   ON stylists FOR ALL
   USING (public.is_owner_admin())
   WITH CHECK (public.is_owner_admin());
 
 -- Services: public read (active only), owner-only full CRUD
+DROP POLICY IF EXISTS "Public can read active services" ON services;
 CREATE POLICY "Public can read active services"
   ON services FOR SELECT
   USING (is_active = TRUE);
 
+DROP POLICY IF EXISTS "Owner can manage services" ON services;
 CREATE POLICY "Owner can manage services"
   ON services FOR ALL
   USING (public.is_owner_admin())
   WITH CHECK (public.is_owner_admin());
 
 -- Appointments: owner-only direct access (API uses service role key server-side)
+DROP POLICY IF EXISTS "Owner can manage appointments" ON appointments;
 CREATE POLICY "Owner can manage appointments"
   ON appointments FOR ALL
   USING (public.is_owner_admin())
   WITH CHECK (public.is_owner_admin());
 
 -- Blocked slots: owner-only direct access
+DROP POLICY IF EXISTS "Owner can manage blocked_slots" ON blocked_slots;
 CREATE POLICY "Owner can manage blocked_slots"
   ON blocked_slots FOR ALL
   USING (public.is_owner_admin())
@@ -211,22 +217,27 @@ VALUES ('gallery-images', 'gallery-images', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage policies
+DROP POLICY IF EXISTS "Public read staff-images" ON storage.objects;
 CREATE POLICY "Public read staff-images"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'staff-images');
 
+DROP POLICY IF EXISTS "Authenticated upload staff-images" ON storage.objects;
 CREATE POLICY "Authenticated upload staff-images"
   ON storage.objects FOR INSERT
   WITH CHECK (bucket_id = 'staff-images' AND auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Public read gallery-images" ON storage.objects;
 CREATE POLICY "Public read gallery-images"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'gallery-images');
 
+DROP POLICY IF EXISTS "Authenticated upload gallery-images" ON storage.objects;
 CREATE POLICY "Authenticated upload gallery-images"
   ON storage.objects FOR INSERT
   WITH CHECK (bucket_id = 'gallery-images' AND auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Authenticated delete gallery-images" ON storage.objects;
 CREATE POLICY "Authenticated delete gallery-images"
   ON storage.objects FOR DELETE
   USING (bucket_id = 'gallery-images' AND auth.role() = 'authenticated');
