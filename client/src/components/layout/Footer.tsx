@@ -93,8 +93,11 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Icon Studio. All rights reserved.
+        <div className="mt-10 border-t border-border pt-6 flex items-center justify-center gap-4 text-xs text-muted-foreground">
+          <span>© {new Date().getFullYear()} Icon Studio. All rights reserved.</span>
+          <Link to="/admin/login" className="hover:text-rose-600 transition-colors">
+            Owner Login
+          </Link>
         </div>
       </div>
     </footer>
