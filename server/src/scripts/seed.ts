@@ -20,20 +20,20 @@ const supabase = createClient(
 
 const stylists = [
   {
-    name: 'Jasmine Rivera',
-    title: 'Senior Colorist & Stylist',
-    bio: 'With over 8 years of experience, Jasmine specializes in balayage, color correction, and transformative cuts. She believes every client deserves a look that makes them feel like the best version of themselves.',
-    specialties: ['Balayage', 'Color Correction', 'Keratin Treatments', 'Precision Cuts'],
-    years_exp: 8,
+    name: 'Sumita Karki',
+    title: 'Hair Stylist',
+    bio: 'With over 10 years of experience, Sumita specializes in cuts, color, and styling. She is dedicated to helping every client look and feel their best.',
+    specialties: ['Haircut & Style', 'Balayage', 'Color Correction', 'Blowout'],
+    years_exp: 10,
     image_url: null,
     is_active: true,
   },
   {
-    name: 'Maya Patel',
-    title: 'Threading Specialist & Stylist',
-    bio: 'Maya brings 6 years of expertise in eyebrow threading and facial hair design, along with a passion for blowouts and styling. Her meticulous technique ensures clean, long-lasting results every time.',
-    specialties: ['Eyebrow Threading', 'Facial Threading', 'Blowouts', 'Updos'],
-    years_exp: 6,
+    name: 'Sazana Aryal',
+    title: 'Threading & Facial Specialist',
+    bio: 'Sazana is an expert in eyebrow threading, facial threading, and facial hair design. Her precise technique delivers clean, long-lasting results every time.',
+    specialties: ['Eyebrow Threading', 'Facial Threading', 'Upper Lip Threading', 'Full Face Threading'],
+    years_exp: null,
     image_url: null,
     is_active: true,
   },
@@ -140,6 +140,13 @@ const services = [
 
 async function seed() {
   console.log('🌱 Seeding Icon Studio database...\n');
+
+  // Deactivate old placeholder stylists
+  console.log('Deactivating placeholder stylists...');
+  await supabase
+    .from('stylists')
+    .update({ is_active: false })
+    .in('name', ['Jasmine Rivera', 'Maya Patel']);
 
   // Insert stylists
   console.log('Inserting stylists...');

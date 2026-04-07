@@ -12,7 +12,7 @@ export default function Location() {
         <title>Location & Hours | Icon Studio</title>
         <meta
           name="description"
-          content={`Visit Icon Studio at ${SALON_INFO.address}. Open Monday–Saturday.`}
+          content={`Visit Icon Studio at ${SALON_INFO.address}. Open Monday–Sunday.`}
         />
       </Helmet>
 
