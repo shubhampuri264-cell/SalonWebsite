@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabaseAdmin } from './lib/supabase';
 import crypto from 'crypto';
+import jwt, { type JwtPayload } from 'jsonwebtoken';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'POST') return handleCreate(req, res);
@@ -38,6 +39,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     .single();
 
   const cancellationToken = crypto.randomUUID();
+  const userId = extractUserId(req.headers.authorization);
 
   const { data, error } = await supabaseAdmin.rpc('book_appointment', {
     p_stylist_id: resolvedStylistId,
@@ -50,6 +52,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     p_duration_min: service.duration_min,
     p_notes: notes ?? null,
     p_cancellation_token: cancellationToken,
+    p_user_id: userId,
   });
 
   if (error) {
@@ -95,6 +98,21 @@ async function handleCancel(req: VercelRequest, res: VercelResponse) {
   if (updateError) return res.status(500).json({ error: updateError.message });
 
   return res.json({ message: 'Appointment cancelled successfully' });
+}
+
+function extractUserId(authHeader: string | undefined): string | null {
+  if (!authHeader?.startsWith('Bearer ')) return null;
+
+  try {
+    const decoded = jwt.verify(
+      authHeader.slice(7),
+      process.env.SUPABASE_JWT_SECRET!
+    ) as JwtPayload;
+
+    return decoded.role === 'authenticated' ? String(decoded.sub) : null;
+  } catch {
+    return null;
+  }
 }
 
 async function resolveAnyoneStylist(date: string, time: string, durationMin: number): Promise<string | null> {
