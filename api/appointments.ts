@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabaseAdmin } from './lib/supabase';
 import crypto from 'crypto';
-import jwt, { type JwtPayload } from 'jsonwebtoken';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'POST') return handleCreate(req, res);
@@ -39,9 +38,9 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     .single();
 
   const cancellationToken = crypto.randomUUID();
-  const userId = extractUserId(req.headers.authorization);
+  const userId = await extractUserId(req.headers.authorization);
 
-  const { data, error } = await supabaseAdmin.rpc('book_appointment', {
+  const rpcParams: Record<string, unknown> = {
     p_stylist_id: resolvedStylistId,
     p_service_id: service_id,
     p_client_name: client_name,
@@ -52,8 +51,10 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     p_duration_min: service.duration_min,
     p_notes: notes ?? null,
     p_cancellation_token: cancellationToken,
-    p_user_id: userId,
-  });
+  };
+  if (userId) rpcParams.p_user_id = userId;
+
+  const { data, error } = await supabaseAdmin.rpc('book_appointment', rpcParams);
 
   if (error) {
     if (error.message?.includes('SLOT_TAKEN')) {
@@ -100,19 +101,10 @@ async function handleCancel(req: VercelRequest, res: VercelResponse) {
   return res.json({ message: 'Appointment cancelled successfully' });
 }
 
-function extractUserId(authHeader: string | undefined): string | null {
+async function extractUserId(authHeader: string | undefined): Promise<string | null> {
   if (!authHeader?.startsWith('Bearer ')) return null;
-
-  try {
-    const decoded = jwt.verify(
-      authHeader.slice(7),
-      process.env.SUPABASE_JWT_SECRET!
-    ) as JwtPayload;
-
-    return decoded.role === 'authenticated' ? String(decoded.sub) : null;
-  } catch {
-    return null;
-  }
+  const { data: { user } } = await supabaseAdmin.auth.getUser(authHeader.slice(7));
+  return user?.id ?? null;
 }
 
 async function resolveAnyoneStylist(date: string, time: string, durationMin: number): Promise<string | null> {

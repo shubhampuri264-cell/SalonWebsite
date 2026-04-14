@@ -13,5 +13,5 @@ export function createAppointment(
 }
 
 export function cancelAppointment(token: string): Promise<{ message: string }> {
-  return apiFetch<{ message: string }>(`/api/appointments/cancel?token=${token}`);
+  return apiFetch<{ message: string }>(`/api/appointments?token=${token}`);
 }

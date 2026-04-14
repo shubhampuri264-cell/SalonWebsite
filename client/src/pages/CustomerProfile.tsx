@@ -42,8 +42,9 @@ export default function CustomerProfile() {
   if (!session) return null;
 
   const displayName = profile?.full_name || profile?.email || 'My Account';
-  const upcoming = appointments.filter((a) => a.status !== 'cancelled' && a.status !== 'completed' && a.appointment_date >= new Date().toISOString().slice(0, 10));
-  const past = appointments.filter((a) => a.status === 'completed' || a.status === 'cancelled' || a.appointment_date < new Date().toISOString().slice(0, 10));
+  const todayLocal = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local timezone
+  const upcoming = appointments.filter((a) => a.status !== 'cancelled' && a.status !== 'completed' && a.appointment_date >= todayLocal);
+  const past = appointments.filter((a) => a.status === 'completed' || a.status === 'cancelled' || a.appointment_date < todayLocal);
 
   return (
     <>

@@ -128,7 +128,7 @@ export default function StepDateTime() {
           {selectedDate && !loadingSlots && slots.length > 0 && (
             <div>
               <p className="mb-3 text-sm font-medium">
-                Available times on {selectedDate}
+                Available times on {formatDate(selectedDate!)}
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {slots.map(({ time }) => (

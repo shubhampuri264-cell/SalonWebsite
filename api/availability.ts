@@ -3,13 +3,13 @@ import { supabaseAdmin } from './lib/supabase';
 import { generateAvailableSlots } from './lib/timeSlots';
 
 const BUSINESS_HOURS: Record<string, { open: string; close: string } | null> = {
-  Monday:    { open: '09:00', close: '19:00' },
-  Tuesday:   { open: '09:00', close: '19:00' },
-  Wednesday: { open: '09:00', close: '19:00' },
-  Thursday:  { open: '09:00', close: '19:00' },
-  Friday:    { open: '09:00', close: '19:00' },
-  Saturday:  { open: '09:00', close: '18:00' },
-  Sunday:    null,
+  Monday:    { open: '10:00', close: '19:00' },
+  Tuesday:   { open: '10:00', close: '19:00' },
+  Wednesday: { open: '10:00', close: '19:00' },
+  Thursday:  { open: '10:00', close: '19:00' },
+  Friday:    { open: '10:00', close: '19:00' },
+  Saturday:  { open: '10:00', close: '19:00' },
+  Sunday:    { open: '10:00', close: '19:00' },
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
