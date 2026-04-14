@@ -1,6 +1,6 @@
 import type { AppointmentStatus, ServiceCategory } from './types';
 
-export const SERVICE_CATEGORIES: ServiceCategory[] = ['hair', 'threading', 'facial', 'waxing', 'special_treatment'];
+export const SERVICE_CATEGORIES: ServiceCategory[] = ['hair', 'threading', 'waxing', 'facial', 'special_treatment', 'male'];
 
 export const APPOINTMENT_STATUSES: AppointmentStatus[] = [
   'pending',
@@ -20,10 +20,11 @@ export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
 
 export const SERVICE_CATEGORY_LABELS: Record<ServiceCategory, string> = {
   hair: 'Hair Services',
-  threading: 'Threading & Waxing',
-  facial: 'Facials',
-  waxing: 'Wax Special',
-  special_treatment: 'Special Keratreatment',
+  threading: 'Threading Services',
+  waxing: 'Waxing Services',
+  facial: 'Facial Services',
+  special_treatment: 'Special Treatments',
+  male: 'Male Services',
 };
 
 // Slot interval in minutes — all appointments snap to :00 and :30

@@ -98,10 +98,16 @@ export default function CustomerProfile() {
         </div>
 
         {/* Past appointments */}
-        {!loading && !error && past.length > 0 && (
+        {!loading && !error && (
           <div className="mt-10">
             <h2 className="font-serif text-xl font-semibold">Past Appointments</h2>
-            <AppointmentList appointments={past} />
+            {past.length === 0 ? (
+              <div className="mt-4 rounded-xl border border-dashed border-border py-10 text-center">
+                <p className="text-muted-foreground">No appointments made previously.</p>
+              </div>
+            ) : (
+              <AppointmentList appointments={past} />
+            )}
           </div>
         )}
       </div>

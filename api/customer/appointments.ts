@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import jwt, { type JwtPayload } from 'jsonwebtoken';
 import { supabaseAdmin } from '../lib/supabase';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -7,8 +6,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const userId = extractUserId(req.headers.authorization);
-  if (!userId) {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(auth.slice(7));
+  if (authError || !user) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -24,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       services:service_id (name, category),
       stylists:stylist_id (name)
     `)
-    .eq('user_id', userId)
+    .eq('user_id', user.id)
     .order('appointment_date', { ascending: false })
     .order('appointment_time', { ascending: false });
 
@@ -33,19 +37,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   return res.json(data ?? []);
-}
-
-function extractUserId(authHeader: string | undefined): string | null {
-  if (!authHeader?.startsWith('Bearer ')) return null;
-
-  try {
-    const decoded = jwt.verify(
-      authHeader.slice(7),
-      process.env.SUPABASE_JWT_SECRET!
-    ) as JwtPayload;
-
-    return decoded.role === 'authenticated' ? String(decoded.sub) : null;
-  } catch {
-    return null;
-  }
 }

@@ -3,7 +3,7 @@ import { supabaseAdmin } from '../lib/supabase';
 import { verifyAdminAuth } from '../lib/auth';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!verifyAdminAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
+  if (!await verifyAdminAuth(req.headers.authorization)) return res.status(401).json({ error: 'Unauthorized' });
 
   if (req.method === 'GET') return handleGet(req, res);
   if (req.method === 'PATCH') return handlePatch(req, res);

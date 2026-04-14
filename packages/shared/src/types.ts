@@ -1,4 +1,4 @@
-export type ServiceCategory = 'hair' | 'threading' | 'facial' | 'waxing' | 'special_treatment';
+export type ServiceCategory = 'hair' | 'threading' | 'facial' | 'waxing' | 'special_treatment' | 'male';
 
 export type AppointmentStatus =
   | 'pending'
