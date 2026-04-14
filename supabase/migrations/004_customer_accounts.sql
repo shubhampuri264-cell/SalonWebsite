@@ -49,10 +49,9 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_appointment      appointments;
-  v_conflict_count   INTEGER;
+  v_appointment appointments;
 BEGIN
-  SELECT COUNT(*) INTO v_conflict_count
+  PERFORM 1
   FROM appointments
   WHERE stylist_id = p_stylist_id
     AND appointment_date = p_appointment_date
@@ -63,7 +62,7 @@ BEGIN
     )
   FOR UPDATE;
 
-  IF v_conflict_count > 0 THEN
+  IF FOUND THEN
     RAISE EXCEPTION 'SLOT_TAKEN' USING ERRCODE = 'P0001';
   END IF;
 
