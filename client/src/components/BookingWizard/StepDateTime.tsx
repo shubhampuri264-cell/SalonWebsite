@@ -3,7 +3,7 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { getAvailability } from '@/api/availability';
 import { useBookingStore } from '@/store/bookingStore';
-import { isSalonOpen, formatTime } from '@/utils/dates';
+import { isSalonOpen, formatTime, formatDate } from '@/utils/dates';
 import { cn } from '@/utils/cn';
 
 export default function StepDateTime() {
