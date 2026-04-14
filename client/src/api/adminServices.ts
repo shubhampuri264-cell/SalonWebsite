@@ -28,7 +28,7 @@ export function updateService(
   data: Partial<Pick<Service, 'name' | 'description' | 'price_min' | 'price_max' | 'duration_min' | 'is_active'>>,
   token: string
 ): Promise<Service> {
-  return apiFetch<Service>(`/api/admin/services/${id}`, {
+  return apiFetch<Service>(`/api/admin/services?id=${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
     token,
