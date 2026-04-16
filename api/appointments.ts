@@ -38,8 +38,9 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     .single();
 
   const cancellationToken = crypto.randomUUID();
+  const userId = await extractUserId(req.headers.authorization);
 
-  const { data, error } = await supabaseAdmin.rpc('book_appointment', {
+  const rpcParams: Record<string, unknown> = {
     p_stylist_id: resolvedStylistId,
     p_service_id: service_id,
     p_client_name: client_name,
@@ -50,7 +51,10 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     p_duration_min: service.duration_min,
     p_notes: notes ?? null,
     p_cancellation_token: cancellationToken,
-  });
+  };
+  if (userId) rpcParams.p_user_id = userId;
+
+  const { data, error } = await supabaseAdmin.rpc('book_appointment', rpcParams);
 
   if (error) {
     if (error.message?.includes('SLOT_TAKEN')) {
@@ -95,6 +99,12 @@ async function handleCancel(req: VercelRequest, res: VercelResponse) {
   if (updateError) return res.status(500).json({ error: updateError.message });
 
   return res.json({ message: 'Appointment cancelled successfully' });
+}
+
+async function extractUserId(authHeader: string | undefined): Promise<string | null> {
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  const { data: { user } } = await supabaseAdmin.auth.getUser(authHeader.slice(7));
+  return user?.id ?? null;
 }
 
 async function resolveAnyoneStylist(date: string, time: string, durationMin: number): Promise<string | null> {

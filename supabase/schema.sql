@@ -81,7 +81,10 @@ ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE blocked_slots ENABLE ROW LEVEL SECURITY;
 
 -- Helper: owner admin check
--- Change this email if ownership changes.
+-- IMPORTANT: Replace 'YOUR_OWNER_EMAIL@example.com' with your actual Supabase login email
+-- before running this schema. This email is used by Row Level Security policies
+-- to grant the owner full CRUD access to stylists and services.
+-- Keep this value private — do NOT commit your real email to version control.
 CREATE OR REPLACE FUNCTION public.is_owner_admin()
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -89,7 +92,7 @@ STABLE
 AS $$
   SELECT
     auth.role() = 'authenticated'
-    AND lower(coalesce(auth.jwt()->>'email', '')) = lower('sumipuri34@gmail.com');
+    AND lower(coalesce(auth.jwt()->>'email', '')) = lower('YOUR_OWNER_EMAIL@example.com');
 $$;
 
 -- Drop old permissive policies before applying locked-down ones

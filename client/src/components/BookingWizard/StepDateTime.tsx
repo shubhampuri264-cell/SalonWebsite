@@ -3,7 +3,7 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { getAvailability } from '@/api/availability';
 import { useBookingStore } from '@/store/bookingStore';
-import { isSalonOpen, formatTime } from '@/utils/dates';
+import { isSalonOpen, formatTime, formatDate } from '@/utils/dates';
 import { cn } from '@/utils/cn';
 
 export default function StepDateTime() {
@@ -128,7 +128,7 @@ export default function StepDateTime() {
           {selectedDate && !loadingSlots && slots.length > 0 && (
             <div>
               <p className="mb-3 text-sm font-medium">
-                Available times on {selectedDate}
+                Available times on {formatDate(selectedDate!)}
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {slots.map(({ time }) => (

@@ -13,6 +13,7 @@ const Book = lazy(() => import('@/pages/Book'));
 const Contact = lazy(() => import('@/pages/Contact'));
 const BookingConfirmation = lazy(() => import('@/pages/BookingConfirmation'));
 const CancelPage = lazy(() => import('@/pages/CancelPage'));
+const CustomerProfile = lazy(() => import('@/pages/CustomerProfile'));
 
 // Admin pages
 const AdminLogin = lazy(() => import('@/pages/admin/AdminLogin'));
@@ -64,6 +65,7 @@ export default function App() {
                       element={<BookingConfirmation />}
                     />
                     <Route path="/booking/cancel" element={<CancelPage />} />
+                    <Route path="/profile" element={<CustomerProfile />} />
                     <Route
                       path="*"
                       element={

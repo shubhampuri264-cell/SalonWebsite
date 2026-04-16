@@ -1,23 +1,13 @@
-import type { VercelRequest } from '@vercel/node';
-import jwt, { type JwtPayload } from 'jsonwebtoken';
+import { supabaseAdmin } from './supabase';
 
-export function verifyAdminAuth(req: VercelRequest): boolean {
-  const auth = req.headers.authorization;
-  if (!auth?.startsWith('Bearer ')) return false;
+export async function verifyAdminAuth(authHeader: string | undefined): Promise<boolean> {
+  if (!authHeader?.startsWith('Bearer ')) return false;
 
   const adminEmail = (process.env.ADMIN_EMAIL ?? '').trim().toLowerCase();
   if (!adminEmail) return false;
 
-  try {
-    const decoded = jwt.verify(
-      auth.slice(7),
-      process.env.SUPABASE_JWT_SECRET!
-    ) as JwtPayload;
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(authHeader.slice(7));
+  if (error || !user) return false;
 
-    const tokenEmail = String(decoded.email ?? '').trim().toLowerCase();
-    return tokenEmail === adminEmail;
-  } catch {
-    return false;
-  }
+  return (user.email ?? '').trim().toLowerCase() === adminEmail;
 }
-

@@ -7,6 +7,7 @@ import { bookingContactSchema, type BookingContactValues } from '@/utils/validat
 import { createAppointment } from '@/api/appointments';
 import { ApiError } from '@/api/client';
 import { formatDate, formatTime } from '@/utils/dates';
+import { useCustomerAuthStore } from '@/store/customerAuthStore';
 
 export default function StepContact() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export default function StepContact() {
     prevStep,
     reset,
   } = useBookingStore();
+  const { session, profile } = useCustomerAuthStore();
 
   const {
     register,
@@ -27,6 +29,11 @@ export default function StepContact() {
     formState: { errors, isSubmitting },
   } = useForm<BookingContactValues>({
     resolver: zodResolver(bookingContactSchema),
+    defaultValues: {
+      client_name: profile?.full_name ?? '',
+      client_email: profile?.email ?? '',
+      client_phone: profile?.phone ?? '',
+    },
   });
 
   const stylistId =
@@ -46,16 +53,19 @@ export default function StepContact() {
     });
 
     try {
-      const result = await createAppointment({
-        service_id: selectedService.id,
-        stylist_id: stylistId,
-        client_name: data.client_name,
-        client_email: data.client_email,
-        client_phone: data.client_phone,
-        appointment_date: selectedDate,
-        appointment_time: selectedTime,
-        notes: data.notes,
-      });
+      const result = await createAppointment(
+        {
+          service_id: selectedService.id,
+          stylist_id: stylistId,
+          client_name: data.client_name,
+          client_email: data.client_email,
+          client_phone: data.client_phone,
+          appointment_date: selectedDate,
+          appointment_time: selectedTime,
+          notes: data.notes,
+        },
+        session?.access_token
+      );
 
       reset();
       navigate('/booking/confirmation', {

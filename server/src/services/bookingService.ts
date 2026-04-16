@@ -5,6 +5,7 @@ interface BookAppointmentParams extends Omit<CreateAppointmentPayload, 'stylist_
   stylist_id: string; // Must be resolved before calling (no 'anyone')
   duration_min: number;
   cancellation_token: string;
+  user_id?: string | null;
 }
 
 /**
@@ -28,6 +29,7 @@ export async function createBooking(
     p_duration_min: params.duration_min,
     p_notes: params.notes ?? null,
     p_cancellation_token: params.cancellation_token,
+    p_user_id: params.user_id ?? null,
   });
 
   if (error) {

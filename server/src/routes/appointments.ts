@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import jwt from 'jsonwebtoken';
 import { supabaseAdmin } from '../config/supabase';
 import { createBooking, resolveAnyoneStylist } from '../services/bookingService';
 import {
@@ -9,7 +10,24 @@ import {
 } from '../services/emailService';
 import { bookingRateLimit } from '../middleware/rateLimiter';
 import { generateCancellationToken } from '../utils/tokenUtils';
+import { env } from '../config/env';
 import type { Appointment } from '@luxe/shared';
+
+interface SupabaseJwtPayload {
+  sub: string;
+  role: string;
+  email: string;
+}
+
+function extractUserId(authHeader: string | undefined): string | null {
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  try {
+    const payload = jwt.verify(authHeader.slice(7), env.SUPABASE_JWT_SECRET) as SupabaseJwtPayload;
+    return payload.role === 'authenticated' ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
 
 export const appointmentsRouter = Router();
 
@@ -67,6 +85,7 @@ appointmentsRouter.post('/', bookingRateLimit, async (req, res, next) => {
       .single();
 
     const cancellationToken = generateCancellationToken();
+    const userId = extractUserId(req.headers.authorization);
 
     const appointment = await createBooking({
       service_id: payload.service_id,
@@ -79,6 +98,7 @@ appointmentsRouter.post('/', bookingRateLimit, async (req, res, next) => {
       stylist_id: stylistId,
       duration_min: service.duration_min,
       cancellation_token: cancellationToken,
+      user_id: userId,
     });
 
     const stylistName = stylist?.name ?? 'Your stylist';

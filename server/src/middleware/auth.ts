@@ -10,7 +10,6 @@ interface SupabaseJwtPayload {
   exp: number;
 }
 
-// Extend Express Request type
 declare global {
   namespace Express {
     interface Request {
@@ -19,6 +18,10 @@ declare global {
   }
 }
 
+/**
+ * Verifies that the request carries a valid Supabase JWT.
+ * Sets req.user on success.
+ */
 export function requireAuth(
   req: Request,
   res: Response,
@@ -46,4 +49,28 @@ export function requireAuth(
   } catch {
     res.status(401).json({ error: 'Invalid or expired token' });
   }
+}
+
+/**
+ * Restricts access to the salon owner only.
+ * Must be used AFTER requireAuth (relies on req.user being set).
+ * Prevents customers (who also have role='authenticated') from
+ * reaching admin endpoints.
+ */
+export function requireAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  if (!req.user) {
+    res.status(401).json({ error: 'Not authenticated' });
+    return;
+  }
+
+  if (req.user.email.toLowerCase() !== env.OWNER_EMAIL.toLowerCase()) {
+    res.status(403).json({ error: 'Admin access required' });
+    return;
+  }
+
+  next();
 }
