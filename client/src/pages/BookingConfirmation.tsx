@@ -36,6 +36,12 @@ export default function BookingConfirmation() {
           to you with all the details.
         </p>
 
+        {!appointment && (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Check your inbox for your booking details and reference number.
+          </p>
+        )}
+
         {appointment && (
           <div className="mt-8 rounded-2xl border border-rose-100 bg-rose-50 p-6 text-left text-sm">
             <div className="flex items-center gap-2 text-rose-700">

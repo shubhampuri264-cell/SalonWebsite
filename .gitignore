@@ -48,3 +48,16 @@ coverage/
 
 # Claude Code
 .claude/
+
+# Print assets
+Html & Images/
+
+# Non-project misc files
+_misc/
+
+# Raw source images (originals — gallery copies live in client/public/gallery/)
+images/
+
+# Scratch/temp scripts
+scratch/
+scripts/

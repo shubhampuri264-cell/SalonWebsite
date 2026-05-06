@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
-import 'react-day-picker/dist/style.css';
 import { getAvailability } from '@/api/availability';
 import { useBookingStore } from '@/store/bookingStore';
 import { isSalonOpen, formatTime, formatDate } from '@/utils/dates';
@@ -87,11 +86,29 @@ export default function StepDateTime() {
               { before: today },
               (date) => !isSalonOpen(date),
             ]}
-            className="w-full"
+            showOutsideDays={false}
             classNames={{
+              months: 'w-full',
+              month: 'w-full',
+              caption: 'flex justify-center items-center mb-4 relative',
+              caption_label: 'text-sm font-semibold',
+              nav: 'flex items-center gap-1',
+              nav_button:
+                'h-7 w-7 flex items-center justify-center rounded-md border border-border hover:bg-muted transition-colors',
+              nav_button_previous: 'absolute left-0',
+              nav_button_next: 'absolute right-0',
+              table: 'w-full border-collapse',
+              head_row: 'flex w-full',
+              head_cell:
+                'flex-1 text-center text-xs font-medium text-muted-foreground pb-2',
+              row: 'flex w-full mt-1',
+              cell: 'flex-1 text-center',
+              day: 'mx-auto h-9 w-9 flex items-center justify-center rounded-full text-sm transition-colors hover:bg-rose-50 hover:text-rose-600 cursor-pointer',
               day_selected:
-                'bg-rose-500 text-white hover:bg-rose-600 focus:bg-rose-600',
+                'bg-rose-500 text-white hover:bg-rose-600 hover:text-white font-semibold',
               day_today: 'font-bold text-rose-600',
+              day_disabled: 'text-muted-foreground opacity-40 cursor-default hover:bg-transparent hover:text-muted-foreground',
+              day_outside: 'hidden',
             }}
           />
         </div>

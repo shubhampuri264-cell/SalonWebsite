@@ -30,13 +30,6 @@ export function updateAppointmentStatus(
   });
 }
 
-export function deleteAppointment(id: string, token: string): Promise<void> {
-  return apiFetch<void>(`/api/admin/appointments?id=${id}`, {
-    method: 'DELETE',
-    token,
-  });
-}
-
 export function createBlockedSlot(
   data: Omit<BlockedSlot, 'id' | 'created_at'>,
   token: string

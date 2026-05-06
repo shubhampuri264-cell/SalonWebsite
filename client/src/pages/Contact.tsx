@@ -18,9 +18,8 @@ export default function Contact() {
     resolver: zodResolver(contactFormSchema),
   });
 
-  const onSubmit = async (_data: ContactFormValues) => {
-    // TODO: wire up to a contact form endpoint or service like Resend
-    await new Promise((r) => setTimeout(r, 800)); // simulate submit
+  const onSubmit = async (data: ContactFormValues) => {
+    window.location.href = `mailto:${SALON_INFO.email}?subject=Message from ${encodeURIComponent(data.name)}&body=${encodeURIComponent(data.message)}%0A%0AFrom%3A ${encodeURIComponent(data.email)}`;
     setSubmitted(true);
     reset();
   };
@@ -47,9 +46,9 @@ export default function Contact() {
           {submitted ? (
             <div className="flex flex-col items-center gap-4 rounded-2xl border border-rose-200 bg-rose-50 p-10 text-center">
               <CheckCircle className="h-12 w-12 text-rose-500" aria-hidden="true" />
-              <h2 className="font-serif text-2xl font-semibold">Message Sent!</h2>
+              <h2 className="font-serif text-2xl font-semibold">Email Ready!</h2>
               <p className="text-muted-foreground">
-                Thanks for reaching out. We'll get back to you as soon as possible.
+                Your email app should have opened with your message pre-filled. Just hit send and we'll get back to you soon.
               </p>
               <button
                 onClick={() => setSubmitted(false)}

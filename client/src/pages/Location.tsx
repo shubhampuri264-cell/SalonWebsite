@@ -3,9 +3,6 @@ import { MapPin, Phone, Mail, Clock } from 'lucide-react';
 import { HOURS_DISPLAY, SALON_INFO } from '@/utils/dates';
 
 export default function Location() {
-  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string;
-  const encodedAddress = encodeURIComponent(SALON_INFO.address);
-
   return (
     <>
       <Helmet>
@@ -27,21 +24,12 @@ export default function Location() {
         </div>
 
         <div className="grid gap-10 lg:grid-cols-2">
-          {/* Map */}
+          {/* Salon photo */}
           <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
-            <iframe
-              title="Icon Studio location map"
-              src={
-                googleMapsApiKey
-                  ? `https://www.google.com/maps/embed/v1/place?key=${googleMapsApiKey}&q=${encodedAddress}`
-                  : `https://maps.google.com/maps?q=${encodedAddress}&output=embed`
-              }
-              width="100%"
-              height="400"
-              className="border-0"
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
+            <img
+              src="/salonpic.png"
+              alt="Icon Studio salon"
+              className="h-[400px] w-full object-cover"
             />
           </div>
 

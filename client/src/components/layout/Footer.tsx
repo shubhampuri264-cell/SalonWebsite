@@ -13,7 +13,7 @@ export default function Footer() {
               to="/"
               className="flex items-center gap-2 font-serif text-xl font-semibold text-rose-600"
             >
-              <Scissors className="h-5 w-5 text-gold-500" aria-hidden="true" />
+              <Scissors className="h-5 w-5 text-rose-500" aria-hidden="true" />
               Icon Studio
             </Link>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">

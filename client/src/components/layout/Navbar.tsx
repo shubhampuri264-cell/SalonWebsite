@@ -60,7 +60,7 @@ export default function Navbar() {
           to="/"
           className="flex items-center gap-2 font-serif text-xl font-semibold tracking-wide text-rose-600"
         >
-          <Scissors className="h-5 w-5 text-gold-500" aria-hidden="true" />
+          <Scissors className="h-5 w-5 text-rose-500" aria-hidden="true" />
           Icon Studio
         </Link>
 
@@ -190,7 +190,7 @@ export default function Navbar() {
           )}
           <Link
             to="/book"
-            className="mt-6 rounded-full bg-rose-500 py-3 text-center text-base font-semibold text-white hover:bg-rose-600"
+            className="mt-6 rounded-full bg-rose-500 py-3 text-center text-base font-semibold text-white transition-colors hover:bg-rose-600"
           >
             Book Now
           </Link>

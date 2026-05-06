@@ -19,11 +19,6 @@ export function formatTime(time: string): string {
   return `${hour}:${String(m).padStart(2, '0')} ${period}`;
 }
 
-/** Returns today's date as YYYY-MM-DD string */
-export function todayString(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 /** Check if the salon is open on a given JS Date */
 export function isSalonOpen(date: Date): boolean {
   const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });

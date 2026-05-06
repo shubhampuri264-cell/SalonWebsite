@@ -74,7 +74,7 @@ export default function Services() {
         <div className="mt-16 text-center">
           <Link
             to="/book"
-            className="rounded-full bg-rose-500 px-8 py-3 text-base font-semibold text-white hover:bg-rose-600 transition-colors"
+            className="rounded-full bg-rose-500 px-8 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-rose-600 hover:shadow-lg"
           >
             Book a Service
           </Link>
