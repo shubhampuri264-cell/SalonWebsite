@@ -45,6 +45,5 @@ export const SALON_INFO = {
   phone: '(718) 255-6940',
   email: 'sumipuri34@gmail.com',
   instagram: 'https://www.instagram.com/sumilovestyle/',
-  facebook: 'https://facebook.com/iconstudionyc',
   tiktok: 'https://www.tiktok.com/@sumi91_',
 } as const;

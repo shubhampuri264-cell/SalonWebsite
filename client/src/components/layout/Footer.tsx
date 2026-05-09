@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Scissors, Instagram, Facebook, MapPin, Phone, Mail } from 'lucide-react';
+import { Scissors, Instagram, MapPin, Phone, Mail } from 'lucide-react';
 import { SALON_INFO } from '@/utils/dates';
 
 export default function Footer() {
@@ -28,15 +28,6 @@ export default function Footer() {
                 className="text-muted-foreground hover:text-rose-600 transition-colors"
               >
                 <Instagram className="h-5 w-5" />
-              </a>
-              <a
-                href={SALON_INFO.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Icon Studio on Facebook"
-                className="text-muted-foreground hover:text-rose-600 transition-colors"
-              >
-                <Facebook className="h-5 w-5" />
               </a>
               <a
                 href={SALON_INFO.tiktok}

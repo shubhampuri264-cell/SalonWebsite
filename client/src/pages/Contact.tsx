@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Instagram, Facebook, Send, CheckCircle } from 'lucide-react';
+import { Instagram, Send, CheckCircle } from 'lucide-react';
 import { contactFormSchema, type ContactFormValues } from '@/utils/validators';
 import { SALON_INFO } from '@/utils/dates';
 
@@ -143,15 +143,6 @@ export default function Contact() {
               >
                 <Instagram className="h-5 w-5" aria-hidden="true" />
                 Instagram
-              </a>
-              <a
-                href={SALON_INFO.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-rose-600 transition-colors"
-              >
-                <Facebook className="h-5 w-5" aria-hidden="true" />
-                Facebook
               </a>
               <a
                 href={SALON_INFO.tiktok}
