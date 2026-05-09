@@ -44,6 +44,7 @@ export const SALON_INFO = {
   address: '39-46 Queens Blvd, Sunnyside, NY 11104',
   phone: '(718) 255-6940',
   email: 'sumipuri34@gmail.com',
-  instagram: 'https://instagram.com/iconstudionyc',
+  instagram: 'https://www.instagram.com/sumilovestyle/',
   facebook: 'https://facebook.com/iconstudionyc',
+  tiktok: 'https://www.tiktok.com/@sumi91_',
 } as const;
