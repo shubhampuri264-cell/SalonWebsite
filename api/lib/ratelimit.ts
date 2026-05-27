@@ -2,11 +2,13 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-type LimiterKey = 'booking' | 'admin';
+type LimiterKey = 'booking' | 'admin' | 'emailResend' | 'emailResendPerAppt';
 
 interface LimiterSet {
   booking: Ratelimit;
   admin: Ratelimit;
+  emailResend: Ratelimit;
+  emailResendPerAppt: Ratelimit;
 }
 
 // Lazily initialized + cached across warm invocations.
@@ -51,6 +53,21 @@ function getLimiters(): LimiterSet | null {
       prefix: 'rl:adm',
       analytics: false,
     }),
+    // Confirmation-email resends: bounded to protect the free Resend tier
+    // (100 emails/day). Two layers — per-IP throttle, plus a per-appointment
+    // cooldown so the same booking can't be hammered.
+    emailResend: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(3, '1 h'),
+      prefix: 'rl:resend',
+      analytics: false,
+    }),
+    emailResendPerAppt: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(1, '5 m'),
+      prefix: 'rl:resend:appt',
+      analytics: false,
+    }),
   };
   return cachedLimiters;
 }
@@ -74,7 +91,8 @@ function clientIp(req: VercelRequest): string {
 export async function enforceRateLimit(
   req: VercelRequest,
   res: VercelResponse,
-  limiter: LimiterKey
+  limiter: LimiterKey,
+  identifier?: string,
 ): Promise<boolean> {
   const limiters = getLimiters();
   if (!limiters) return true;
@@ -83,7 +101,8 @@ export async function enforceRateLimit(
   // never crashes the underlying endpoint. If rate-limit infra is down,
   // fail OPEN so legitimate bookings keep working.
   try {
-    const { success, limit, remaining, reset } = await limiters[limiter].limit(clientIp(req));
+    const key = identifier ?? clientIp(req);
+    const { success, limit, remaining, reset } = await limiters[limiter].limit(key);
 
     res.setHeader('X-RateLimit-Limit', String(limit));
     res.setHeader('X-RateLimit-Remaining', String(remaining));

@@ -3,7 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useCustomerAuthStore } from '@/store/customerAuthStore';
 import { supabase } from '@/api/supabase';
-import { getCustomerAppointments, type CustomerAppointment } from '@/api/customer';
+import {
+  getCustomerAppointments,
+  resendConfirmationEmail,
+  type CustomerAppointment,
+} from '@/api/customer';
+import { cancelAppointment } from '@/api/appointments';
+import { ApiError } from '@/api/client';
 import { APPOINTMENT_STATUS_LABELS } from '@luxe/shared';
 import type { AppointmentStatus } from '@luxe/shared';
 import { formatDate, formatTime } from '@/utils/dates';
@@ -23,6 +29,9 @@ export default function CustomerProfile() {
   const [appointments, setAppointments] = useState<CustomerAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [resendStatus, setResendStatus] = useState<Record<string, 'sent' | 'error'>>({});
 
   useEffect(() => {
     if (!session) {
@@ -46,6 +55,56 @@ export default function CustomerProfile() {
       .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load appointments'))
       .finally(() => setLoading(false));
   }, [session]);
+
+  const handleResend = async (appt: CustomerAppointment) => {
+    setResendingId(appt.id);
+    setResendStatus((s) => {
+      const next = { ...s };
+      delete next[appt.id];
+      return next;
+    });
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error('Your session has expired. Please sign in again.');
+      await resendConfirmationEmail(appt.id, token);
+      setResendStatus((s) => ({ ...s, [appt.id]: 'sent' }));
+    } catch (err) {
+      const message =
+        err instanceof ApiError && err.status === 429
+          ? 'Please wait a few minutes before resending again.'
+          : err instanceof Error
+          ? err.message
+          : 'Failed to resend email.';
+      setResendStatus((s) => ({ ...s, [appt.id]: 'error' }));
+      window.alert(message);
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  const handleCancel = async (appt: CustomerAppointment) => {
+    if (!window.confirm('Cancel this appointment? This cannot be undone.')) return;
+    setCancellingId(appt.id);
+    try {
+      await cancelAppointment(appt.cancellation_token);
+      // Optimistically mark as cancelled locally so the row moves to "Past"
+      // without needing a refetch.
+      setAppointments((prev) =>
+        prev.map((a) => (a.id === appt.id ? { ...a, status: 'cancelled' } : a))
+      );
+    } catch (err) {
+      const message =
+        err instanceof ApiError && err.status === 409
+          ? 'This appointment was already cancelled.'
+          : err instanceof Error
+          ? err.message
+          : 'Failed to cancel. Please try again.';
+      window.alert(message);
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   if (!session) return null;
 
@@ -102,7 +161,14 @@ export default function CustomerProfile() {
               </Link>
             </div>
           ) : (
-            <AppointmentList appointments={upcoming} />
+            <AppointmentList
+              appointments={upcoming}
+              onCancel={handleCancel}
+              cancellingId={cancellingId}
+              onResend={handleResend}
+              resendingId={resendingId}
+              resendStatus={resendStatus}
+            />
           )}
         </div>
 
@@ -124,7 +190,24 @@ export default function CustomerProfile() {
   );
 }
 
-function AppointmentList({ appointments }: { appointments: CustomerAppointment[] }) {
+interface AppointmentListProps {
+  appointments: CustomerAppointment[];
+  onCancel?: (appt: CustomerAppointment) => void;
+  cancellingId?: string | null;
+  onResend?: (appt: CustomerAppointment) => void;
+  resendingId?: string | null;
+  resendStatus?: Record<string, 'sent' | 'error'>;
+}
+
+function AppointmentList({
+  appointments,
+  onCancel,
+  cancellingId,
+  onResend,
+  resendingId,
+  resendStatus,
+}: AppointmentListProps) {
+  const showActions = !!onCancel || !!onResend;
   return (
     <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-white">
       <table className="w-full text-sm">
@@ -134,6 +217,7 @@ function AppointmentList({ appointments }: { appointments: CustomerAppointment[]
             <th className="px-4 py-3 text-left font-medium">Service</th>
             <th className="px-4 py-3 text-left font-medium">Stylist</th>
             <th className="px-4 py-3 text-left font-medium">Status</th>
+            {showActions && <th className="px-4 py-3 text-right font-medium">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -153,6 +237,34 @@ function AppointmentList({ appointments }: { appointments: CustomerAppointment[]
                   {APPOINTMENT_STATUS_LABELS[appt.status as AppointmentStatus] ?? appt.status}
                 </span>
               </td>
+              {showActions && (
+                <td className="px-4 py-3 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    {onResend && (
+                      <button
+                        onClick={() => onResend(appt)}
+                        disabled={resendingId === appt.id || resendStatus?.[appt.id] === 'sent'}
+                        className="rounded-full border border-border px-3 py-1 text-xs font-medium text-stone-700 transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {resendingId === appt.id
+                          ? 'Sending…'
+                          : resendStatus?.[appt.id] === 'sent'
+                          ? 'Sent ✓'
+                          : 'Resend Email'}
+                      </button>
+                    )}
+                    {onCancel && (
+                      <button
+                        onClick={() => onCancel(appt)}
+                        disabled={cancellingId === appt.id}
+                        className="rounded-full border border-rose-300 px-3 py-1 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {cancellingId === appt.id ? 'Cancelling…' : 'Cancel'}
+                      </button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
