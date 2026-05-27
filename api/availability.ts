@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { z } from 'zod';
 import { supabaseAdmin } from './lib/supabase';
 import { generateAvailableSlots } from './lib/timeSlots';
 
@@ -12,14 +13,20 @@ const BUSINESS_HOURS: Record<string, { open: string; close: string } | null> = {
   Sunday:    { open: '10:00', close: '19:00' },
 };
 
+const querySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date (YYYY-MM-DD)'),
+  service_id: z.string().uuid('Invalid service_id'),
+  stylist_id: z.union([z.string().uuid(), z.literal('anyone')]).optional(),
+});
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { date, service_id, stylist_id } = req.query as Record<string, string>;
-
-  if (!date || !service_id) {
-    return res.status(400).json({ error: 'Missing date or service_id' });
+  const parsed = querySchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid query params', details: parsed.error.flatten() });
   }
+  const { date, service_id, stylist_id } = parsed.data;
 
   const dayOfWeek = new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
     weekday: 'long',

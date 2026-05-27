@@ -88,7 +88,7 @@ export async function sendSalonNotification(
   serviceName: string,
   stylistName: string
 ): Promise<void> {
-  if (!env.ADMIN_EMAIL) return;
+  if (!env.OWNER_EMAIL) return;
 
   const dateTimeStr = formatDateTime(
     appointment.appointment_date,
@@ -96,7 +96,7 @@ export async function sendSalonNotification(
   );
 
   await send({
-    to: env.ADMIN_EMAIL,
+    to: env.OWNER_EMAIL,
     subject: `New Booking: ${appointment.client_name} — ${dateTimeStr}`,
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">

@@ -14,11 +14,20 @@ interface LimiterSet {
 // so legitimate traffic is never blocked by misconfiguration).
 let cachedLimiters: LimiterSet | null | undefined;
 
+// Strip surrounding single/double quotes from an env var value.
+// Vercel's env var UI stores the value verbatim — including any quotes that
+// were copy-pasted from a .env file. dotenv (used locally) strips them
+// automatically; this helper closes that gap for serverless.
+function unquote(s: string | undefined): string | undefined {
+  if (!s) return s;
+  return s.replace(/^['"]|['"]$/g, '');
+}
+
 function getLimiters(): LimiterSet | null {
   if (cachedLimiters !== undefined) return cachedLimiters;
 
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = unquote(process.env.UPSTASH_REDIS_REST_URL);
+  const token = unquote(process.env.UPSTASH_REDIS_REST_TOKEN);
   if (!url || !token) {
     console.warn('[ratelimit] UPSTASH_REDIS_REST_URL/TOKEN missing — rate limiting disabled');
     cachedLimiters = null;
@@ -70,15 +79,23 @@ export async function enforceRateLimit(
   const limiters = getLimiters();
   if (!limiters) return true;
 
-  const { success, limit, remaining, reset } = await limiters[limiter].limit(clientIp(req));
+  // Wrap the Upstash call so a network blip / misconfig / quota exhaustion
+  // never crashes the underlying endpoint. If rate-limit infra is down,
+  // fail OPEN so legitimate bookings keep working.
+  try {
+    const { success, limit, remaining, reset } = await limiters[limiter].limit(clientIp(req));
 
-  res.setHeader('X-RateLimit-Limit', String(limit));
-  res.setHeader('X-RateLimit-Remaining', String(remaining));
-  res.setHeader('X-RateLimit-Reset', String(reset));
+    res.setHeader('X-RateLimit-Limit', String(limit));
+    res.setHeader('X-RateLimit-Remaining', String(remaining));
+    res.setHeader('X-RateLimit-Reset', String(reset));
 
-  if (!success) {
-    res.status(429).json({ error: 'Too many requests. Please try again later.' });
-    return false;
+    if (!success) {
+      res.status(429).json({ error: 'Too many requests. Please try again later.' });
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('[ratelimit] Upstash call failed — failing open:', err);
+    return true;
   }
-  return true;
 }

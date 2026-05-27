@@ -1,7 +1,27 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { z } from 'zod';
 import { supabaseAdmin } from '../lib/supabase';
 import { verifyAdminAuth } from '../lib/auth';
 import { enforceRateLimit } from '../lib/ratelimit';
+
+const APPOINTMENT_STATUSES = ['pending', 'confirmed', 'cancelled', 'completed', 'no_show'] as const;
+
+const getQuerySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  status: z.enum(APPOINTMENT_STATUSES).optional(),
+  stylist_id: z.string().uuid().optional(),
+});
+
+const patchSchema = z.object({
+  status: z.enum(APPOINTMENT_STATUSES).optional(),
+  notes: z.string().max(500).optional(),
+}).refine((d) => d.status !== undefined || d.notes !== undefined, {
+  message: 'At least one of { status, notes } is required',
+});
+
+const idQuerySchema = z.object({
+  id: z.string().uuid('Invalid appointment id'),
+});
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!(await enforceRateLimit(req, res, 'admin'))) return;
@@ -14,7 +34,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handleGet(req: VercelRequest, res: VercelResponse) {
-  const { date, status, stylist_id } = req.query;
+  const parsed = getQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid query params', details: parsed.error.flatten() });
+  }
+  const { date, status, stylist_id } = parsed.data;
 
   let query = supabaseAdmin
     .from('appointments')
@@ -22,9 +46,9 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
     .order('appointment_date', { ascending: false })
     .order('appointment_time', { ascending: true });
 
-  if (date) query = query.eq('appointment_date', date as string);
-  if (status) query = query.eq('status', status as string);
-  if (stylist_id) query = query.eq('stylist_id', stylist_id as string);
+  if (date) query = query.eq('appointment_date', date);
+  if (status) query = query.eq('status', status);
+  if (stylist_id) query = query.eq('stylist_id', stylist_id);
 
   const { data, error } = await query;
   if (error) return res.status(500).json({ error: error.message });
@@ -32,32 +56,37 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handlePatch(req: VercelRequest, res: VercelResponse) {
-  // URL: /api/admin/appointments?id=xxx
-  const id = req.query.id as string;
-  if (!id) return res.status(400).json({ error: 'Missing appointment id' });
-
-  const { status } = req.body ?? {};
-  if (!status) return res.status(400).json({ error: 'Missing status' });
+  const idParsed = idQuerySchema.safeParse(req.query);
+  if (!idParsed.success) {
+    return res.status(400).json({ error: 'Invalid appointment id', details: idParsed.error.flatten() });
+  }
+  const bodyParsed = patchSchema.safeParse(req.body);
+  if (!bodyParsed.success) {
+    return res.status(400).json({ error: 'Validation failed', details: bodyParsed.error.flatten() });
+  }
 
   const { data, error } = await supabaseAdmin
     .from('appointments')
-    .update({ status })
-    .eq('id', id)
+    .update(bodyParsed.data)
+    .eq('id', idParsed.data.id)
     .select()
     .single();
 
   if (error) return res.status(500).json({ error: error.message });
+  if (!data) return res.status(404).json({ error: 'Appointment not found' });
   return res.json(data);
 }
 
 async function handleDelete(req: VercelRequest, res: VercelResponse) {
-  const id = req.query.id as string;
-  if (!id) return res.status(400).json({ error: 'Missing appointment id' });
+  const parsed = idQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid appointment id', details: parsed.error.flatten() });
+  }
 
   const { error } = await supabaseAdmin
     .from('appointments')
     .delete()
-    .eq('id', id);
+    .eq('id', parsed.data.id);
 
   if (error) return res.status(500).json({ error: error.message });
   return res.status(204).end();

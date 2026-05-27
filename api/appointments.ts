@@ -1,7 +1,23 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { z } from 'zod';
 import { supabaseAdmin } from './lib/supabase';
 import { enforceRateLimit } from './lib/ratelimit';
 import crypto from 'crypto';
+
+const createSchema = z.object({
+  stylist_id: z.union([z.string().uuid(), z.literal('anyone')]),
+  service_id: z.string().uuid(),
+  client_name: z.string().min(2).max(100),
+  client_email: z.string().email().max(254),
+  client_phone: z.string().min(7).max(20),
+  appointment_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date (YYYY-MM-DD)'),
+  appointment_time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Invalid time (HH:MM)'),
+  notes: z.string().max(500).optional(),
+});
+
+const cancelSchema = z.object({
+  token: z.string().uuid('Invalid cancellation token'),
+});
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'POST') return handleCreate(req, res);
@@ -12,11 +28,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 async function handleCreate(req: VercelRequest, res: VercelResponse) {
   if (!(await enforceRateLimit(req, res, 'booking'))) return;
 
-  const { stylist_id, service_id, client_name, client_email, client_phone, appointment_date, appointment_time, notes } = req.body ?? {};
-
-  if (!service_id || !client_name || !client_email || !client_phone || !appointment_date || !appointment_time) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  const parsed = createSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
   }
+  const { stylist_id, service_id, client_name, client_email, client_phone, appointment_date, appointment_time, notes } = parsed.data;
 
   // Fetch service duration
   const { data: service } = await supabaseAdmin
@@ -28,10 +44,11 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
   if (!service) return res.status(404).json({ error: 'Service not found' });
 
   // Resolve 'anyone' to a specific stylist
-  let resolvedStylistId = stylist_id;
+  let resolvedStylistId: string = stylist_id;
   if (stylist_id === 'anyone') {
-    resolvedStylistId = await resolveAnyoneStylist(appointment_date, appointment_time, service.duration_min);
-    if (!resolvedStylistId) return res.status(409).json({ error: 'No stylists available for this slot', code: 'SLOT_TAKEN' });
+    const resolved = await resolveAnyoneStylist(appointment_date, appointment_time, service.duration_min);
+    if (!resolved) return res.status(409).json({ error: 'No stylists available for this slot', code: 'SLOT_TAKEN' });
+    resolvedStylistId = resolved;
   }
 
   const { data: stylist } = await supabaseAdmin
@@ -82,8 +99,11 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handleCancel(req: VercelRequest, res: VercelResponse) {
-  const token = req.query.token as string | undefined;
-  if (!token) return res.status(400).json({ error: 'Missing cancellation token' });
+  const parsed = cancelSchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid cancellation token', details: parsed.error.flatten() });
+  }
+  const { token } = parsed.data;
 
   const { data: appointment, error } = await supabaseAdmin
     .from('appointments')
@@ -151,7 +171,7 @@ async function sendEmails(appointment: any, serviceName: string, stylistName: st
   const from = process.env.EMAIL_FROM ?? 'Icon Studio <noreply@iconht.studio>';
   const devOverride = process.env.EMAIL_DEV_OVERRIDE;
   const clientUrl = process.env.CLIENT_URL ?? '';
-  const adminEmail = process.env.ADMIN_EMAIL;
+  const ownerEmail = process.env.OWNER_EMAIL;
   const cancelUrl = `${clientUrl}/booking/cancel?token=${appointment.cancellation_token}`;
   const dateTimeStr = formatDateTime(appointment.appointment_date, appointment.appointment_time);
 
@@ -205,9 +225,9 @@ async function sendEmails(appointment: any, serviceName: string, stylistName: st
     send(appointment.client_email, 'Your Icon Studio Appointment is Confirmed!', customerHtml)
       .catch((e) => console.error('[Email] Confirmation failed:', e)),
   ];
-  if (adminEmail) {
+  if (ownerEmail) {
     sends.push(
-      send(adminEmail, `New Booking: ${appointment.client_name} — ${dateTimeStr}`, salonHtml)
+      send(ownerEmail, `New Booking: ${appointment.client_name} — ${dateTimeStr}`, salonHtml)
         .catch((e) => console.error('[Email] Salon notification failed:', e))
     );
   }
