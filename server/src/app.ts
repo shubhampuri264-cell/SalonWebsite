@@ -12,10 +12,19 @@ export function createApp() {
   // Security headers
   app.use(helmet());
 
-  // CORS — locked to frontend origin
+  // CORS — locked to frontend origin in prod; also permits any localhost
+  // port in dev so the Vite dev server (default :5173) can call this Express
+  // backend even when CLIENT_URL points at the deployed domain.
   app.use(
     cors({
-      origin: env.CLIENT_URL,
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (origin === env.CLIENT_URL) return callback(null, true);
+        if (env.NODE_ENV !== 'production' && /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+          return callback(null, true);
+        }
+        callback(new Error('Not allowed by CORS'));
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
