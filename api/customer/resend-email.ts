@@ -61,8 +61,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(409).json({ error: 'Appointment is in the past' });
   }
 
-  const services = appointment.services as { name: string } | null;
-  const stylists = appointment.stylists as { name: string } | null;
+  // Supabase types join results as arrays even when the FK is single-valued.
+  // Runtime is a single object here, but unwrap defensively in case the
+  // generated types ever flip.
+  const pickName = (v: unknown): string | null => {
+    if (!v) return null;
+    const first = Array.isArray(v) ? v[0] : v;
+    return (first as { name?: string } | null)?.name ?? null;
+  };
+  const serviceName = pickName(appointment.services) ?? 'Service';
+  const stylistName = pickName(appointment.stylists) ?? 'Your stylist';
 
   try {
     await sendBookingConfirmationEmail(
@@ -76,8 +84,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         cancellation_token: appointment.cancellation_token,
         notes: appointment.notes,
       },
-      services?.name ?? 'Service',
-      stylists?.name ?? 'Your stylist',
+      serviceName,
+      stylistName,
     );
   } catch (err) {
     console.error('[Email] Resend failed:', err);
