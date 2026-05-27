@@ -20,6 +20,8 @@ const envSchema = z.object({
   CLIENT_URL: z.string().url(),
   SALON_TIMEZONE: z.string().default('America/New_York'),
   ADMIN_EMAIL: z.string().email().optional(),
+  EMAIL_FROM: z.string().default('Icon Studio <onboarding@resend.dev>'),
+  EMAIL_DEV_OVERRIDE: z.string().email().optional(),
   // The owner's login email — used to restrict admin API access to this account only.
   // Must match the email used to sign in to Supabase Auth.
   OWNER_EMAIL: z.string().email(),

@@ -4,7 +4,30 @@ import type { Appointment } from '@luxe/shared';
 
 const resend = new Resend(env.RESEND_API_KEY);
 
-const FROM_ADDRESS = 'Icon Studio <noreply@iconstudionyc.com>';
+const FROM_ADDRESS = env.EMAIL_FROM;
+
+function resolveRecipient(to: string): string {
+  return env.EMAIL_DEV_OVERRIDE ?? to;
+}
+
+async function send(params: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<void> {
+  const { data, error } = await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: resolveRecipient(params.to),
+    subject: params.subject,
+    html: params.html,
+  });
+  if (error) {
+    throw new Error(`Resend rejected send: ${error.message ?? JSON.stringify(error)}`);
+  }
+  if (env.EMAIL_DEV_OVERRIDE) {
+    console.log(`[Email] sent (id=${data?.id}) — overridden to ${env.EMAIL_DEV_OVERRIDE}, original=${params.to}`);
+  }
+}
 
 function formatDateTime(date: string, time: string): string {
   const [year, month, day] = date.split('-').map(Number);
@@ -32,8 +55,7 @@ export async function sendBookingConfirmation(
     appointment.appointment_time
   );
 
-  await resend.emails.send({
-    from: FROM_ADDRESS,
+  await send({
     to: appointment.client_email,
     subject: 'Your Icon Studio Appointment is Confirmed!',
     html: `
@@ -73,8 +95,7 @@ export async function sendSalonNotification(
     appointment.appointment_time
   );
 
-  await resend.emails.send({
-    from: FROM_ADDRESS,
+  await send({
     to: env.ADMIN_EMAIL,
     subject: `New Booking: ${appointment.client_name} — ${dateTimeStr}`,
     html: `
@@ -98,8 +119,7 @@ export async function sendCancellationConfirmation(
   appointment: Appointment,
   serviceName: string
 ): Promise<void> {
-  await resend.emails.send({
-    from: FROM_ADDRESS,
+  await send({
     to: appointment.client_email,
     subject: 'Your Icon Studio Appointment Has Been Cancelled',
     html: `
@@ -129,8 +149,7 @@ export async function sendReminderEmail(
     appointment.appointment_time
   );
 
-  await resend.emails.send({
-    from: FROM_ADDRESS,
+  await send({
     to: appointment.client_email,
     subject: 'Reminder: Your Icon Studio Appointment is Tomorrow',
     html: `

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { XCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { XCircle, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { cancelAppointment } from '@/api/appointments';
 import { ApiError } from '@/api/client';
 
@@ -9,18 +9,20 @@ export default function CancelPage() {
   const [params] = useSearchParams();
   const token = params.get('token');
 
-  const [state, setState] = useState<'loading' | 'success' | 'error' | 'already-cancelled'>(
-    'loading'
+  // 'idle' is the default — the cancellation will NOT fire until the user
+  // explicitly clicks "Confirm cancellation". This prevents email link scanners
+  // (Microsoft Safe Links, Gmail prefetch, antivirus URL checkers) from
+  // silently cancelling real appointments when they preview the link.
+  const [state, setState] = useState<
+    'idle' | 'loading' | 'success' | 'error' | 'already-cancelled'
+  >(token ? 'idle' : 'error');
+  const [errorMsg, setErrorMsg] = useState<string>(
+    token ? '' : 'Invalid cancellation link.'
   );
-  const [errorMsg, setErrorMsg] = useState<string>('');
 
-  useEffect(() => {
-    if (!token) {
-      setState('error');
-      setErrorMsg('Invalid cancellation link.');
-      return;
-    }
-
+  const handleConfirm = () => {
+    if (!token) return;
+    setState('loading');
     cancelAppointment(token)
       .then(() => setState('success'))
       .catch((e) => {
@@ -31,7 +33,7 @@ export default function CancelPage() {
           setErrorMsg(e.message || 'Something went wrong.');
         }
       });
-  }, [token]);
+  };
 
   return (
     <>
@@ -40,6 +42,31 @@ export default function CancelPage() {
       </Helmet>
 
       <div className="container mx-auto flex min-h-[60vh] flex-col items-center justify-center px-4 py-16 text-center">
+        {state === 'idle' && (
+          <>
+            <AlertTriangle className="h-16 w-16 text-rose-500" aria-hidden="true" />
+            <h1 className="mt-4 font-serif text-3xl font-semibold">Cancel Your Appointment?</h1>
+            <p className="mt-2 max-w-md text-muted-foreground">
+              This action cannot be undone. Click the button below to confirm
+              that you want to cancel your appointment.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button
+                onClick={handleConfirm}
+                className="rounded-full bg-rose-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-rose-600 transition-colors"
+              >
+                Confirm Cancellation
+              </button>
+              <Link
+                to="/"
+                className="rounded-full border border-border px-6 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+              >
+                Keep My Appointment
+              </Link>
+            </div>
+          </>
+        )}
+
         {state === 'loading' && (
           <>
             <Loader2 className="h-12 w-12 animate-spin text-rose-400" aria-hidden="true" />

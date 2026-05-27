@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { getAvailability } from '@/api/availability';
 import { useBookingStore } from '@/store/bookingStore';
 import { isSalonOpen, formatTime, formatDate } from '@/utils/dates';
 import { cn } from '@/utils/cn';
+import { supabase } from '@/api/supabase';
+
+const POLL_INTERVAL_MS = 30_000;
 
 export default function StepDateTime() {
   const {
@@ -27,30 +30,82 @@ export default function StepDateTime() {
     ? new Date(selectedDate + 'T12:00:00')
     : undefined;
 
-  // Fetch availability whenever date changes
+  const stylistId =
+    typeof selectedStylist === 'object' && selectedStylist
+      ? selectedStylist.id
+      : 'anyone';
+
+  /**
+   * Fetches availability for the currently selected date/service/stylist.
+   * Pass showSpinner=true for user-triggered loads (date change, first mount).
+   * Pass showSpinner=false for background refreshes (Realtime events, poll ticks)
+   * so the UI does not flash an empty state.
+   */
+  const fetchSlots = useCallback(
+    (showSpinner: boolean) => {
+      if (!selectedDate || !selectedService) return;
+
+      setSlotsError(null);
+      if (showSpinner) setLoadingSlots(true);
+
+      getAvailability({
+        date: selectedDate,
+        service_id: selectedService.id,
+        stylist_id: stylistId === 'anyone' ? undefined : stylistId,
+      })
+        .then((res) => {
+          const newSlots = res.slots ?? [];
+          setSlots(newSlots);
+
+          // If the currently selected time was taken by another user during this
+          // refresh, clear it so they cannot accidentally submit a stale slot.
+          const { selectedTime: currentTime } = useBookingStore.getState();
+          if (currentTime && !newSlots.some((s) => s.time === currentTime)) {
+            useBookingStore.getState().setDateTime(selectedDate, '');
+          }
+        })
+        .catch((e) => setSlotsError(e.message))
+        .finally(() => {
+          if (showSpinner) setLoadingSlots(false);
+        });
+    },
+    [selectedDate, selectedService, stylistId]
+  );
+
+  // Initial fetch (with spinner + slot reset) whenever inputs change.
+  // fetchSlots captures the same deps so we only need it in the array —
+  // it will be a new reference any time date/service/stylist changes.
+  useEffect(() => {
+    setSlots([]);
+    fetchSlots(true);
+  }, [fetchSlots]);
+
+  // Supabase Realtime subscription for instant cross-user slot updates,
+  // with a 30-second polling fallback in case Realtime is unavailable.
   useEffect(() => {
     if (!selectedDate || !selectedService) return;
 
-    setSlotsError(null);
-    setLoadingSlots(true);
-    setSlots([]);
+    const channel = supabase
+      .channel(`slots:${selectedDate}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+          filter: `appointment_date=eq.${selectedDate}`,
+        },
+        () => fetchSlots(false)
+      )
+      .subscribe();
 
-    const stylistId =
-      typeof selectedStylist === 'object' && selectedStylist
-        ? selectedStylist.id
-        : 'anyone';
+    const interval = setInterval(() => fetchSlots(false), POLL_INTERVAL_MS);
 
-    getAvailability({
-      date: selectedDate,
-      service_id: selectedService.id,
-      stylist_id: stylistId === 'anyone' ? undefined : stylistId,
-    })
-      .then((res) => {
-        setSlots(res.slots ?? []);
-      })
-      .catch((e) => setSlotsError(e.message))
-      .finally(() => setLoadingSlots(false));
-  }, [selectedDate, selectedService, selectedStylist]);
+    return () => {
+      void supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [fetchSlots, selectedDate, selectedService]);
 
   const handleDaySelect = (day: Date | undefined) => {
     if (!day) return;

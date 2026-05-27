@@ -1,10 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabaseAdmin } from '../lib/supabase';
 import { verifyAdminAuth } from '../lib/auth';
+import { enforceRateLimit } from '../lib/ratelimit';
 
 const SERVICE_CATEGORIES = ['hair', 'threading', 'facial', 'waxing', 'special_treatment', 'male'] as const;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!(await enforceRateLimit(req, res, 'admin'))) return;
   if (!await verifyAdminAuth(req.headers.authorization)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }

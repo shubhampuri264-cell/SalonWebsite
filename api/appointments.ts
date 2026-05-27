@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabaseAdmin } from './lib/supabase';
+import { enforceRateLimit } from './lib/ratelimit';
 import crypto from 'crypto';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -9,6 +10,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handleCreate(req: VercelRequest, res: VercelResponse) {
+  if (!(await enforceRateLimit(req, res, 'booking'))) return;
+
   const { stylist_id, service_id, client_name, client_email, client_phone, appointment_date, appointment_time, notes } = req.body ?? {};
 
   if (!service_id || !client_name || !client_email || !client_phone || !appointment_date || !appointment_time) {
@@ -145,33 +148,71 @@ async function sendEmails(appointment: any, serviceName: string, stylistName: st
 
   const { Resend } = await import('resend');
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const from = 'Icon Studio <noreply@iconstudionyc.com>';
+  const from = process.env.EMAIL_FROM ?? 'Icon Studio <noreply@iconht.studio>';
+  const devOverride = process.env.EMAIL_DEV_OVERRIDE;
   const clientUrl = process.env.CLIENT_URL ?? '';
+  const adminEmail = process.env.ADMIN_EMAIL;
   const cancelUrl = `${clientUrl}/booking/cancel?token=${appointment.cancellation_token}`;
-
   const dateTimeStr = formatDateTime(appointment.appointment_date, appointment.appointment_time);
 
-  await resend.emails.send({
-    from,
-    to: appointment.client_email,
-    subject: 'Your Icon Studio Appointment is Confirmed!',
-    html: `
-      <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #333;">
-        <h1 style="color: #C9757A;">Icon Studio</h1>
-        <h2>Appointment Confirmed</h2>
-        <p>Hi ${appointment.client_name},</p>
-        <p>Your appointment has been confirmed:</p>
-        <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-          <tr><td style="padding: 8px; font-weight: bold;">Service:</td><td style="padding: 8px;">${serviceName}</td></tr>
-          <tr><td style="padding: 8px; font-weight: bold;">Stylist:</td><td style="padding: 8px;">${stylistName}</td></tr>
-          <tr><td style="padding: 8px; font-weight: bold;">Date & Time:</td><td style="padding: 8px;">${dateTimeStr}</td></tr>
-        </table>
-        <p><strong>Location:</strong> 39-46 Queens Blvd, Sunnyside, NY 11104</p>
-        <p><a href="${cancelUrl}" style="color: #C9757A;">Cancel appointment</a></p>
-        <p style="color: #888; font-size: 12px; margin-top: 32px;">Icon Studio · 39-46 Queens Blvd, Sunnyside, NY 11104 · (718) 255-6940</p>
-      </div>
-    `,
-  });
+  // Wrap resend.emails.send so silent failures surface in logs
+  async function send(to: string, subject: string, html: string) {
+    const { error } = await resend.emails.send({
+      from,
+      to: devOverride ?? to,
+      subject,
+      html,
+    });
+    if (error) {
+      throw new Error(`Resend rejected send to ${to}: ${error.message ?? JSON.stringify(error)}`);
+    }
+  }
+
+  const customerHtml = `
+    <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #333;">
+      <h1 style="color: #C9757A;">Icon Studio</h1>
+      <h2>Appointment Confirmed</h2>
+      <p>Hi ${appointment.client_name},</p>
+      <p>Your appointment has been confirmed:</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <tr><td style="padding: 8px; font-weight: bold;">Service:</td><td style="padding: 8px;">${serviceName}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Stylist:</td><td style="padding: 8px;">${stylistName}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Date & Time:</td><td style="padding: 8px;">${dateTimeStr}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Booking Ref:</td><td style="padding: 8px;">${String(appointment.id).slice(0, 8).toUpperCase()}</td></tr>
+      </table>
+      <p><strong>Location:</strong> 39-46 Queens Blvd, Sunnyside, NY 11104</p>
+      <p><a href="${cancelUrl}" style="color: #C9757A;">Cancel appointment</a></p>
+      <p style="color: #888; font-size: 12px; margin-top: 32px;">Icon Studio · 39-46 Queens Blvd, Sunnyside, NY 11104 · (718) 255-6940</p>
+    </div>
+  `;
+
+  const salonHtml = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>New Appointment Booked</h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr><td style="padding: 8px; font-weight: bold;">Client:</td><td style="padding: 8px;">${appointment.client_name}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Email:</td><td style="padding: 8px;">${appointment.client_email}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Phone:</td><td style="padding: 8px;">${appointment.client_phone}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Service:</td><td style="padding: 8px;">${serviceName}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Stylist:</td><td style="padding: 8px;">${stylistName}</td></tr>
+        <tr><td style="padding: 8px; font-weight: bold;">Date & Time:</td><td style="padding: 8px;">${dateTimeStr}</td></tr>
+        ${appointment.notes ? `<tr><td style="padding: 8px; font-weight: bold;">Notes:</td><td style="padding: 8px;">${appointment.notes}</td></tr>` : ''}
+      </table>
+    </div>
+  `;
+
+  const sends: Promise<void>[] = [
+    send(appointment.client_email, 'Your Icon Studio Appointment is Confirmed!', customerHtml)
+      .catch((e) => console.error('[Email] Confirmation failed:', e)),
+  ];
+  if (adminEmail) {
+    sends.push(
+      send(adminEmail, `New Booking: ${appointment.client_name} — ${dateTimeStr}`, salonHtml)
+        .catch((e) => console.error('[Email] Salon notification failed:', e))
+    );
+  }
+
+  await Promise.all(sends);
 }
 
 function formatDateTime(date: string, time: string): string {
