@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useCustomerAuthStore } from '@/store/customerAuthStore';
+import { supabase } from '@/api/supabase';
 import { getCustomerAppointments, type CustomerAppointment } from '@/api/customer';
 import { APPOINTMENT_STATUS_LABELS } from '@luxe/shared';
 import type { AppointmentStatus } from '@luxe/shared';
@@ -32,12 +33,19 @@ export default function CustomerProfile() {
   }, [session, profile, navigate, loadProfile]);
 
   useEffect(() => {
-    if (!session?.access_token) return;
-    getCustomerAppointments(session.access_token)
+    if (!session) return;
+    // Pull the freshest token directly from supabase rather than the persisted
+    // zustand copy — supabase auto-refreshes; zustand may be one cycle behind.
+    supabase.auth.getSession()
+      .then(({ data }) => {
+        const token = data.session?.access_token;
+        if (!token) throw new Error('Your session has expired. Please sign in again.');
+        return getCustomerAppointments(token);
+      })
       .then(setAppointments)
       .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load appointments'))
       .finally(() => setLoading(false));
-  }, [session?.access_token]);
+  }, [session]);
 
   if (!session) return null;
 
