@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { supabaseAdmin } from '../lib/supabase';
 import { enforceRateLimit } from '../lib/ratelimit';
 import { sendBookingConfirmationEmail } from '../lib/emails';
+import { captureError } from '../lib/sentry';
 
 const bodySchema = z.object({
   appointment_id: z.string().uuid(),
@@ -89,6 +90,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
   } catch (err) {
     console.error('[Email] Resend failed:', err);
+    await captureError(err, {
+      fingerprint: 'api:customer:resend-email',
+      tags: { endpoint: 'POST /api/customer/resend-email' },
+      extra: { appointment_id },
+    });
     return res.status(502).json({ error: 'Failed to send email. Please try again later.' });
   }
 

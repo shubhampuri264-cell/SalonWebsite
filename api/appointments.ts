@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { supabaseAdmin } from './lib/supabase';
 import { enforceRateLimit } from './lib/ratelimit';
 import { sendBookingConfirmationEmail, sendOwnerNotificationEmail } from './lib/emails';
+import { captureError } from './lib/sentry';
 import crypto from 'crypto';
 
 const createSchema = z.object({
@@ -79,8 +80,18 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
 
   if (error) {
     if (error.message?.includes('SLOT_TAKEN')) {
+      // Race condition between availability check and insert — expected,
+      // not worth alerting on. Caller retries with a different slot.
       return res.status(409).json({ error: 'This time slot is no longer available', code: 'SLOT_TAKEN' });
     }
+    // Anything else here is unexpected: RLS misconfig, RPC permission, DB
+    // outage, etc. These are the failures the owner is paying for via
+    // empty booking slots — surface them.
+    await captureError(error, {
+      fingerprint: 'api:appointments:rpc',
+      tags: { endpoint: 'POST /api/appointments' },
+      extra: { service_id, stylist_id: resolvedStylistId, appointment_date, appointment_time },
+    });
     return res.status(500).json({ error: `Booking failed: ${error.message}` });
   }
 
@@ -170,9 +181,21 @@ async function resolveAnyoneStylist(date: string, time: string, durationMin: num
 
 async function sendEmails(appointment: any, serviceName: string, stylistName: string) {
   await Promise.all([
-    sendBookingConfirmationEmail(appointment, serviceName, stylistName)
-      .catch((e) => console.error('[Email] Confirmation failed:', e)),
-    sendOwnerNotificationEmail(appointment, serviceName, stylistName)
-      .catch((e) => console.error('[Email] Salon notification failed:', e)),
+    sendBookingConfirmationEmail(appointment, serviceName, stylistName).catch(async (e) => {
+      console.error('[Email] Confirmation failed:', e);
+      await captureError(e, {
+        fingerprint: 'api:appointments:email:confirmation',
+        tags: { endpoint: 'POST /api/appointments' },
+        extra: { appointment_id: appointment.id, client_email: appointment.client_email },
+      });
+    }),
+    sendOwnerNotificationEmail(appointment, serviceName, stylistName).catch(async (e) => {
+      console.error('[Email] Salon notification failed:', e);
+      await captureError(e, {
+        fingerprint: 'api:appointments:email:owner',
+        tags: { endpoint: 'POST /api/appointments' },
+        extra: { appointment_id: appointment.id },
+      });
+    }),
   ]);
 }

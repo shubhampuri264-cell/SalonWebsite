@@ -19,6 +19,7 @@
     "puppeteer": "^24.41.0"
   },
   "dependencies": {
+    "@sentry/node": "^10.54.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "sharp": "^0.34.5"

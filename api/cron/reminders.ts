@@ -7,6 +7,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabaseAdmin } from '../../server/src/config/supabase';
 import { sendReminderEmail } from '../../server/src/services/emailService';
 import type { Appointment } from '@luxe/shared';
+import { captureError } from '../lib/sentry';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Verify this is called by Vercel Cron (has the authorization header)
@@ -31,6 +32,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .eq('reminder_sent', false);
 
   if (error) {
+    await captureError(error, {
+      fingerprint: 'cron:reminders:fetch',
+      tags: { job: 'cron-reminders' },
+      extra: { date: tomorrowStr },
+    });
     return res.status(500).json({ error: 'Failed to fetch appointments', details: error.message });
   }
 
@@ -39,6 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   let sent = 0;
+  let failed = 0;
   for (const row of appointments) {
     const appointment = row as Appointment;
     const serviceName = (row as any).services?.name ?? 'appointment';
@@ -52,9 +59,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq('id', appointment.id);
       sent++;
     } catch (err) {
+      failed++;
       console.error(`Failed reminder for ${appointment.id}:`, err);
+      // Report per-appointment failures with a shared fingerprint so Sentry
+      // groups them into one issue per occurrence type (e.g. "Resend 429"),
+      // not one issue per appointment id.
+      await captureError(err, {
+        fingerprint: 'cron:reminders:send',
+        tags: { job: 'cron-reminders' },
+        extra: { appointment_id: appointment.id, date: tomorrowStr },
+      });
     }
   }
 
-  return res.json({ sent, total: appointments.length });
+  // If every reminder failed, surface a higher-severity event — the whole
+  // job is broken (likely Resend outage or quota exhaustion), not a one-off.
+  if (failed > 0 && sent === 0) {
+    await captureError(new Error(`Cron reminders: all ${failed} sends failed`), {
+      fingerprint: 'cron:reminders:total-failure',
+      tags: { job: 'cron-reminders' },
+      extra: { failed, total: appointments.length, date: tomorrowStr },
+    });
+  }
+
+  return res.json({ sent, failed, total: appointments.length });
 }

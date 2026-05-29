@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { supabaseAdmin } from '../lib/supabase';
 import { verifyAdminAuth } from '../lib/auth';
 import { enforceRateLimit } from '../lib/ratelimit';
+import { captureError } from '../lib/sentry';
 
 const APPOINTMENT_STATUSES = ['pending', 'confirmed', 'cancelled', 'completed', 'no_show'] as const;
 
@@ -51,7 +52,13 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
   if (stylist_id) query = query.eq('stylist_id', stylist_id);
 
   const { data, error } = await query;
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) {
+    await captureError(error, {
+      fingerprint: 'api:admin:appointments:list',
+      tags: { endpoint: 'GET /api/admin/appointments' },
+    });
+    return res.status(500).json({ error: error.message });
+  }
   return res.json(data);
 }
 
@@ -72,7 +79,14 @@ async function handlePatch(req: VercelRequest, res: VercelResponse) {
     .select()
     .single();
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) {
+    await captureError(error, {
+      fingerprint: 'api:admin:appointments:update',
+      tags: { endpoint: 'PATCH /api/admin/appointments' },
+      extra: { appointment_id: idParsed.data.id },
+    });
+    return res.status(500).json({ error: error.message });
+  }
   if (!data) return res.status(404).json({ error: 'Appointment not found' });
   return res.json(data);
 }
@@ -88,6 +102,13 @@ async function handleDelete(req: VercelRequest, res: VercelResponse) {
     .delete()
     .eq('id', parsed.data.id);
 
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) {
+    await captureError(error, {
+      fingerprint: 'api:admin:appointments:delete',
+      tags: { endpoint: 'DELETE /api/admin/appointments' },
+      extra: { appointment_id: parsed.data.id },
+    });
+    return res.status(500).json({ error: error.message });
+  }
   return res.status(204).end();
 }

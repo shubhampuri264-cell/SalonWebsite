@@ -11,12 +11,14 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.3.4",
     "@luxe/shared": "*",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-label": "^2.0.2",
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-toast": "^1.1.5",
+    "@sentry/react": "^10.54.0",
     "@supabase/supabase-js": "^2.39.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
@@ -30,8 +32,7 @@
     "tailwind-merge": "^2.2.0",
     "yet-another-react-lightbox": "^3.14.0",
     "zod": "^3.22.4",
-    "zustand": "^4.4.7",
-    "@hookform/resolvers": "^3.3.4"
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
