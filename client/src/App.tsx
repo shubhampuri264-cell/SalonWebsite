@@ -18,6 +18,7 @@ const Contact = lazy(() => import('@/pages/Contact'));
 const BookingConfirmation = lazy(() => import('@/pages/BookingConfirmation'));
 const CancelPage = lazy(() => import('@/pages/CancelPage'));
 const CustomerProfile = lazy(() => import('@/pages/CustomerProfile'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 
 // Admin pages
 const AdminLogin = lazy(() => import('@/pages/admin/AdminLogin'));
@@ -88,6 +89,7 @@ export default function App() {
                     />
                     <Route path="/booking/cancel" element={<CancelPage />} />
                     <Route path="/profile" element={<CustomerProfile />} />
+                    <Route path="/auth/reset" element={<ResetPassword />} />
                     <Route
                       path="*"
                       element={

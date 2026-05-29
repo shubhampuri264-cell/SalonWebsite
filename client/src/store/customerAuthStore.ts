@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/api/supabase';
+import { apiFetch, ApiError } from '@/api/client';
 
 export interface CustomerProfile {
   id: string;
@@ -20,6 +21,8 @@ interface CustomerAuthState {
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
   loadProfile: () => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<boolean>;
+  updatePassword: (newPassword: string) => Promise<boolean>;
   clearError: () => void;
   setSession: (session: Session | null) => void;
 }
@@ -95,6 +98,40 @@ export const useCustomerAuthStore = create<CustomerAuthState>()(
             .upsert({ id: session.user.id, full_name: metaName });
           set({ profile: { id: session.user.id, full_name: metaName, phone: null, email: session.user.email ?? null } });
         }
+      },
+
+      // Sends a password-reset email via the server (Resend), NOT via
+      // Supabase's built-in SMTP (free tier capped at ~3/h, unusable in prod).
+      // The server mints a Supabase recovery action_link (1h TTL, single-use)
+      // and ships it through Resend. Always returns true unless the request
+      // itself failed (network error / 429) — the caller should always show
+      // the same "if an account exists..." message to avoid enumeration.
+      requestPasswordReset: async (email) => {
+        set({ isLoading: true, error: null });
+        try {
+          await apiFetch<{ message: string }>('/api/customer/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+          });
+          set({ isLoading: false });
+          return true;
+        } catch (err) {
+          const msg = err instanceof ApiError
+            ? err.message
+            : 'Something went wrong. Please try again.';
+          set({ isLoading: false, error: msg });
+          return false;
+        }
+      },
+
+      // Called from the /auth/reset page after the recovery link puts the user
+      // into a temporary PASSWORD_RECOVERY session. updateUser writes the new
+      // password and invalidates the recovery token.
+      updatePassword: async (newPassword) => {
+        set({ isLoading: true, error: null });
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        set({ isLoading: false, error: error ? error.message : null });
+        return !error;
       },
 
       clearError: () => set({ error: null }),

@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabaseAdmin } from '../lib/supabase';
+import { enforceRateLimit } from '../lib/ratelimit';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -15,6 +16,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (authError || !user) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+
+  // Per-user throttle on the customer dashboard fetch. Keyed by user.id (not IP)
+  // so households / offices behind one NAT don't fight for budget.
+  if (!(await enforceRateLimit(req, res, 'customer', `user:${user.id}`))) return;
 
   const { data, error } = await supabaseAdmin
     .from('appointments')

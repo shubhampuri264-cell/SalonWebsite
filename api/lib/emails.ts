@@ -134,6 +134,39 @@ export async function sendBookingConfirmationEmail(
   await sendOne(resend, appointment.client_email, 'Your Icon Studio Appointment is Confirmed!', html);
 }
 
+function buildPasswordResetHtml(actionLink: string): string {
+  return `
+    <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #333;">
+      <h1 style="color: #C9757A;">Icon Studio</h1>
+      <h2>Reset your password</h2>
+      <p>We received a request to reset the password for your Icon Studio account.</p>
+      <p>Click the button below to set a new password. This link expires in 1 hour and can only be used once.</p>
+      <p style="margin: 24px 0;">
+        <a href="${actionLink}" style="display: inline-block; background-color: #C9757A; color: #fff; padding: 12px 24px; border-radius: 999px; text-decoration: none; font-weight: 600;">
+          Reset password
+        </a>
+      </p>
+      <p style="color: #666; font-size: 14px;">If the button doesn't work, paste this link into your browser:</p>
+      <p style="word-break: break-all; color: #666; font-size: 12px;">${actionLink}</p>
+      <p style="color: #888; font-size: 12px; margin-top: 32px;">
+        If you didn't request this, you can safely ignore this email — your password won't change.
+      </p>
+      <p style="color: #888; font-size: 12px;">Icon Studio · 39-46 Queens Blvd, Sunnyside, NY 11104 · (718) 255-6940</p>
+    </div>
+  `;
+}
+
+// Sends the password-reset email via Resend — bypassing Supabase's built-in
+// SMTP, whose free tier (~3 emails/hour) is unusable in production. The
+// `actionLink` should be the value returned by
+// supabaseAdmin.auth.admin.generateLink({ type: 'recovery', ... }).
+export async function sendPasswordResetEmail(toEmail: string, actionLink: string): Promise<void> {
+  const resend = await getResend();
+  if (!resend) return;
+  const html = buildPasswordResetHtml(actionLink);
+  await sendOne(resend, toEmail, 'Reset your Icon Studio password', html);
+}
+
 export async function sendOwnerNotificationEmail(
   appointment: AppointmentEmailData,
   serviceName: string,

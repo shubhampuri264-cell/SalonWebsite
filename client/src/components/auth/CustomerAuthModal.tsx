@@ -7,7 +7,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Tab = 'signin' | 'signup';
+type Tab = 'signin' | 'signup' | 'forgot';
 
 export default function CustomerAuthModal({ onClose }: Props) {
   const [tab, setTab] = useState<Tab>('signin');
@@ -16,8 +16,9 @@ export default function CustomerAuthModal({ onClose }: Props) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [signUpSuccess, setSignUpSuccess] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
-  const { signIn, signUp, isLoading, error, clearError, session } = useCustomerAuthStore();
+  const { signIn, signUp, requestPasswordReset, isLoading, error, clearError, session } = useCustomerAuthStore();
 
   // Close modal once signed in
   if (session) {
@@ -47,6 +48,16 @@ export default function CustomerAuthModal({ onClose }: Props) {
     setTab(t);
     clearError();
     setSignUpSuccess(false);
+    setResetSent(false);
+  };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearError();
+    // Show the same confirmation regardless of whether the email exists —
+    // prevents account enumeration via the reset endpoint.
+    await requestPasswordReset(email.trim());
+    setResetSent(true);
   };
 
   return (
@@ -58,7 +69,7 @@ export default function CustomerAuthModal({ onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-serif text-2xl font-semibold">
-            {tab === 'signin' ? 'Sign In' : 'Create Account'}
+            {tab === 'signin' ? 'Sign In' : tab === 'forgot' ? 'Reset Password' : 'Create Account'}
           </h2>
           <button
             onClick={onClose}
@@ -69,27 +80,29 @@ export default function CustomerAuthModal({ onClose }: Props) {
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="mb-6 flex rounded-full border border-border bg-muted p-1">
-          <button
-            onClick={() => switchTab('signin')}
-            className={cn(
-              'flex-1 rounded-full py-2 text-sm font-medium transition-colors',
-              tab === 'signin' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            Sign In
-          </button>
-          <button
-            onClick={() => switchTab('signup')}
-            className={cn(
-              'flex-1 rounded-full py-2 text-sm font-medium transition-colors',
-              tab === 'signup' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            Create Account
-          </button>
-        </div>
+        {/* Tabs — hidden on the forgot-password view to keep focus on the task */}
+        {tab !== 'forgot' && (
+          <div className="mb-6 flex rounded-full border border-border bg-muted p-1">
+            <button
+              onClick={() => switchTab('signin')}
+              className={cn(
+                'flex-1 rounded-full py-2 text-sm font-medium transition-colors',
+                tab === 'signin' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => switchTab('signup')}
+              className={cn(
+                'flex-1 rounded-full py-2 text-sm font-medium transition-colors',
+                tab === 'signup' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Create Account
+            </button>
+          </div>
+        )}
 
         {/* Error */}
         {error && (
@@ -98,7 +111,60 @@ export default function CustomerAuthModal({ onClose }: Props) {
           </div>
         )}
 
-        {tab === 'signin' ? (
+        {tab === 'forgot' ? (
+          resetSent ? (
+            <div className="text-center space-y-4">
+              <p className="font-medium">Check your email</p>
+              <p className="text-sm text-muted-foreground">
+                If an account exists for <strong>{email}</strong>, we&apos;ve sent a password
+                reset link. It expires in 1 hour.
+              </p>
+              <button
+                onClick={() => switchTab('signin')}
+                className="text-sm text-rose-600 underline"
+              >
+                Back to sign in
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleForgot} className="space-y-4" noValidate>
+              <p className="text-sm text-muted-foreground">
+                Enter the email for your account and we&apos;ll send you a reset link.
+              </p>
+              <div>
+                <label htmlFor="forgot-email" className="mb-1 block text-sm font-medium">
+                  Email
+                </label>
+                <input
+                  id="forgot-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoading || !email}
+                className="w-full rounded-full bg-rose-500 py-2.5 text-sm font-semibold text-white hover:bg-rose-600 transition-colors disabled:opacity-50"
+              >
+                {isLoading ? 'Sending…' : 'Send reset link'}
+              </button>
+              <p className="text-center text-sm text-muted-foreground">
+                <button
+                  type="button"
+                  onClick={() => switchTab('signin')}
+                  className="text-rose-600 underline"
+                >
+                  Back to sign in
+                </button>
+              </p>
+            </form>
+          )
+        ) : tab === 'signin' ? (
           <form onSubmit={handleSignIn} className="space-y-4" noValidate>
             <div>
               <label htmlFor="signin-email" className="mb-1 block text-sm font-medium">
@@ -137,16 +203,25 @@ export default function CustomerAuthModal({ onClose }: Props) {
             >
               {isLoading ? 'Signing in…' : 'Sign In'}
             </button>
-            <p className="text-center text-sm text-muted-foreground">
-              No account?{' '}
+            <div className="flex justify-between text-sm text-muted-foreground">
               <button
                 type="button"
-                onClick={() => switchTab('signup')}
+                onClick={() => switchTab('forgot')}
                 className="text-rose-600 underline"
               >
-                Create one
+                Forgot password?
               </button>
-            </p>
+              <span>
+                No account?{' '}
+                <button
+                  type="button"
+                  onClick={() => switchTab('signup')}
+                  className="text-rose-600 underline"
+                >
+                  Create one
+                </button>
+              </span>
+            </div>
           </form>
         ) : signUpSuccess ? (
           <div className="text-center space-y-4">
