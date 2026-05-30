@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import Navbar from '@/components/layout/Navbar';
@@ -6,23 +6,25 @@ import Footer from '@/components/layout/Footer';
 import { supabase } from '@/api/supabase';
 import { useCustomerAuthStore } from '@/store/customerAuthStore';
 import { useAuthStore } from '@/store/authStore';
+import { lazyWithReload } from '@/utils/lazyWithReload';
 
-// Public pages — lazy loaded for code splitting
-const Home = lazy(() => import('@/pages/Home'));
-const Services = lazy(() => import('@/pages/Services'));
-const Team = lazy(() => import('@/pages/Team'));
-const Gallery = lazy(() => import('@/pages/Gallery'));
-const Location = lazy(() => import('@/pages/Location'));
-const Book = lazy(() => import('@/pages/Book'));
-const Contact = lazy(() => import('@/pages/Contact'));
-const BookingConfirmation = lazy(() => import('@/pages/BookingConfirmation'));
-const CancelPage = lazy(() => import('@/pages/CancelPage'));
-const CustomerProfile = lazy(() => import('@/pages/CustomerProfile'));
-const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
+// Public pages — lazy loaded for code splitting. lazyWithReload recovers from
+// stale chunk requests after a redeploy (see utils/lazyWithReload).
+const Home = lazyWithReload(() => import('@/pages/Home'));
+const Services = lazyWithReload(() => import('@/pages/Services'));
+const Team = lazyWithReload(() => import('@/pages/Team'));
+const Gallery = lazyWithReload(() => import('@/pages/Gallery'));
+const Location = lazyWithReload(() => import('@/pages/Location'));
+const Book = lazyWithReload(() => import('@/pages/Book'));
+const Contact = lazyWithReload(() => import('@/pages/Contact'));
+const BookingConfirmation = lazyWithReload(() => import('@/pages/BookingConfirmation'));
+const CancelPage = lazyWithReload(() => import('@/pages/CancelPage'));
+const CustomerProfile = lazyWithReload(() => import('@/pages/CustomerProfile'));
+const ResetPassword = lazyWithReload(() => import('@/pages/ResetPassword'));
 
 // Admin pages
-const AdminLogin = lazy(() => import('@/pages/admin/AdminLogin'));
-const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
+const AdminLogin = lazyWithReload(() => import('@/pages/admin/AdminLogin'));
+const AdminDashboard = lazyWithReload(() => import('@/pages/admin/AdminDashboard'));
 
 function PageLoader() {
   return (
