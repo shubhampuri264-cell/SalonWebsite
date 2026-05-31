@@ -21,7 +21,7 @@ const FEATURES = [
   {
     icon: CalendarCheck,
     title: 'Flexible Hours',
-    desc: 'Open Monday through Saturday to fit your schedule.',
+    desc: 'Open Monday through Sunday to fit your schedule.',
   },
 ];
 
