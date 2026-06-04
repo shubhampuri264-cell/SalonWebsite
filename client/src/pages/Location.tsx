@@ -27,7 +27,7 @@ export default function Location() {
           {/* Salon photo */}
           <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
             <img
-              src="/salonpic.png"
+              src="/location-salon.jpeg"
               alt="Icon Studio salon"
               className="h-[400px] w-full object-cover"
             />

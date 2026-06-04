@@ -61,3 +61,6 @@ images/
 # Scratch/temp scripts
 scratch/
 scripts/
+
+graphify-out
+.claude/agents/
