@@ -24,7 +24,7 @@ export const SERVICE_CATEGORY_LABELS: Record<ServiceCategory, string> = {
   waxing: 'Waxing Services',
   facial: 'Facial Services',
   special_treatment: 'Special Treatments',
-  male: 'Male Services',
+  male: 'Man Hair / Children Haircut',
 };
 
 // Slot interval in minutes — all appointments snap to :00 and :30

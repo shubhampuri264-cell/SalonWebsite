@@ -28,6 +28,10 @@ export default function StepService() {
         Select the service you'd like to book.
       </p>
 
+      <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <span className="font-semibold">Special Offer:</span> Eyebrow threading is free with any facial or special treatment service.
+      </div>
+
       {error && (
         <p className="mt-4 text-destructive text-sm">
           Failed to load services. Please refresh.

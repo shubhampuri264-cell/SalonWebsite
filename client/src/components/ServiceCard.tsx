@@ -1,4 +1,4 @@
-import { Clock, DollarSign } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 import type { Service } from '@luxe/shared';
 import { cn } from '@/utils/cn';
 
@@ -12,11 +12,6 @@ export default function ServiceCard({ service, selected, onClick }: ServiceCardP
   const priceDisplay = service.price_max
     ? `$${service.price_min} – $${service.price_max}`
     : `$${service.price_min}`;
-
-  const durationDisplay =
-    service.duration_min >= 60
-      ? `${Math.floor(service.duration_min / 60)}h${service.duration_min % 60 ? ` ${service.duration_min % 60}m` : ''}`
-      : `${service.duration_min}m`;
 
   return (
     <article
@@ -43,10 +38,6 @@ export default function ServiceCard({ service, selected, onClick }: ServiceCardP
         <span className="flex items-center gap-1 font-medium text-rose-600">
           <DollarSign className="h-4 w-4" aria-hidden="true" />
           {priceDisplay}
-        </span>
-        <span className="flex items-center gap-1 text-muted-foreground">
-          <Clock className="h-4 w-4" aria-hidden="true" />
-          {durationDisplay}
         </span>
       </div>
     </article>
