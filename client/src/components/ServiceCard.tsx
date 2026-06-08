@@ -10,8 +10,8 @@ interface ServiceCardProps {
 
 export default function ServiceCard({ service, selected, onClick }: ServiceCardProps) {
   const priceDisplay = service.price_max
-    ? `$${service.price_min} – $${service.price_max}`
-    : `$${service.price_min}`;
+    ? `${service.price_min} – ${service.price_max}`
+    : `${service.price_min}`;
 
   return (
     <article
