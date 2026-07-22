@@ -30,13 +30,13 @@ export function isSalonOpen(date: Date): boolean {
  * Returns an array of { day, hours } pairs for the hours table.
  */
 export const HOURS_DISPLAY: Array<{ day: string; hours: string }> = [
-  { day: 'Monday', hours: '10:00 AM – 7:30 PM' },
-  { day: 'Tuesday', hours: '10:00 AM – 7:30 PM' },
-  { day: 'Wednesday', hours: '10:00 AM – 7:30 PM' },
-  { day: 'Thursday', hours: '10:00 AM – 7:30 PM' },
-  { day: 'Friday', hours: '10:00 AM – 7:30 PM' },
-  { day: 'Saturday', hours: '10:00 AM – 7:30 PM' },
-  { day: 'Sunday', hours: '10:00 AM – 7:00 PM' },
+  { day: 'Monday', hours: '10:00 AM – 8:00 PM' },
+  { day: 'Tuesday', hours: '10:00 AM – 8:00 PM' },
+  { day: 'Wednesday', hours: '10:00 AM – 8:00 PM' },
+  { day: 'Thursday', hours: '10:00 AM – 8:00 PM' },
+  { day: 'Friday', hours: '10:00 AM – 8:00 PM' },
+  { day: 'Saturday', hours: '10:00 AM – 8:00 PM' },
+  { day: 'Sunday', hours: '10:00 AM – 8:00 PM' },
 ];
 
 export const SALON_INFO = {

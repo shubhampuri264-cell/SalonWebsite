@@ -32,11 +32,11 @@ export const SLOT_INTERVAL_MINUTES = 30;
 
 // Salon business hours (24h format)
 export const BUSINESS_HOURS: Record<string, { open: string; close: string } | null> = {
-  Monday:    { open: '10:00', close: '19:00' },
-  Tuesday:   { open: '10:00', close: '19:00' },
-  Wednesday: { open: '10:00', close: '19:00' },
-  Thursday:  { open: '10:00', close: '19:00' },
-  Friday:    { open: '10:00', close: '19:00' },
-  Saturday:  { open: '10:00', close: '19:00' },
-  Sunday:    { open: '10:00', close: '19:00' },
+  Monday:    { open: '10:00', close: '20:00' },
+  Tuesday:   { open: '10:00', close: '20:00' },
+  Wednesday: { open: '10:00', close: '20:00' },
+  Thursday:  { open: '10:00', close: '20:00' },
+  Friday:    { open: '10:00', close: '20:00' },
+  Saturday:  { open: '10:00', close: '20:00' },
+  Sunday:    { open: '10:00', close: '20:00' },
 };

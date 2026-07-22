@@ -2,6 +2,9 @@
 -- Changes: Blowdry price, remove Hair Wash, Conditioner price,
 --          add Keratin Treatment, replace Man Haircut with Man/Children Haircut in hair category.
 
+-- Remove Baldy
+DELETE FROM services WHERE name = 'Baldy';
+
 -- Update Blowdry price: $45-60 -> $40-50
 UPDATE services SET price_min = 40, price_max = 50 WHERE name = 'Blowdry';
 
