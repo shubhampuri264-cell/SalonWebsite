@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { supabaseAdmin } from '../lib/supabase';
-import { verifyAdminAuth } from '../lib/auth';
-import { enforceRateLimit } from '../lib/ratelimit';
+import { supabaseAdmin } from '../_lib/supabase';
+import { verifyAdminAuth } from '../_lib/auth';
+import { enforceRateLimit } from '../_lib/ratelimit';
 
 const SERVICE_CATEGORIES = ['hair', 'threading', 'facial', 'waxing', 'special_treatment', 'male'] as const;
 

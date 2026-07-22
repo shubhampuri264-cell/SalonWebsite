@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { supabaseAdmin } from '../lib/supabase';
-import { checkRateLimit, enforceRateLimit } from '../lib/ratelimit';
-import { sendPasswordResetEmail } from '../lib/emails';
-import { captureError } from '../lib/sentry';
+import { supabaseAdmin } from '../_lib/supabase';
+import { checkRateLimit, enforceRateLimit } from '../_lib/ratelimit';
+import { sendPasswordResetEmail } from '../_lib/emails';
+import { captureError } from '../_lib/sentry';
 
 // Self-serve password reset.
 //

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabaseAdmin } from '../lib/supabase';
-import { enforceRateLimit } from '../lib/ratelimit';
+import { supabaseAdmin } from '../_lib/supabase';
+import { enforceRateLimit } from '../_lib/ratelimit';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

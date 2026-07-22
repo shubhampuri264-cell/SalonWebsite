@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { supabaseAdmin } from './lib/supabase';
-import { generateAvailableSlots } from './lib/timeSlots';
+import { supabaseAdmin } from './_lib/supabase';
+import { generateAvailableSlots } from './_lib/timeSlots';
 
 const BUSINESS_HOURS: Record<string, { open: string; close: string } | null> = {
   Monday:    { open: '10:00', close: '20:00' },

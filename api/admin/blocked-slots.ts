@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { supabaseAdmin } from '../lib/supabase';
-import { verifyAdminAuth } from '../lib/auth';
-import { enforceRateLimit } from '../lib/ratelimit';
+import { supabaseAdmin } from '../_lib/supabase';
+import { verifyAdminAuth } from '../_lib/auth';
+import { enforceRateLimit } from '../_lib/ratelimit';
 
 const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 

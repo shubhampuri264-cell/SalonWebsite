@@ -7,7 +7,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabaseAdmin } from '../../server/src/config/supabase';
 import { sendReminderEmail } from '../../server/src/services/emailService';
 import type { Appointment } from '@luxe/shared';
-import { captureError } from '../lib/sentry';
+import { captureError } from '../_lib/sentry';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Verify this is called by Vercel Cron (has the authorization header)

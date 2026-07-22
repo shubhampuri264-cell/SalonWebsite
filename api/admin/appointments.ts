@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { supabaseAdmin } from '../lib/supabase';
-import { verifyAdminAuth } from '../lib/auth';
-import { enforceRateLimit } from '../lib/ratelimit';
-import { captureError } from '../lib/sentry';
+import { supabaseAdmin } from '../_lib/supabase';
+import { verifyAdminAuth } from '../_lib/auth';
+import { enforceRateLimit } from '../_lib/ratelimit';
+import { captureError } from '../_lib/sentry';
 
 const APPOINTMENT_STATUSES = ['pending', 'confirmed', 'cancelled', 'completed', 'no_show'] as const;
 
