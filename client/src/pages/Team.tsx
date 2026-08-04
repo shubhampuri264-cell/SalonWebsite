@@ -26,9 +26,10 @@ export default function Team() {
       </Helmet>
 
       <div className="container mx-auto px-4 py-16 md:px-6">
-        <div className="mb-12 text-center">
-          <h1 className="font-serif text-4xl font-semibold md:text-5xl">Meet Our Team</h1>
-          <p className="mt-4 max-w-xl mx-auto text-muted-foreground">
+        <div className="mb-14 text-center">
+          <span className="eyebrow eyebrow--center">The People</span>
+          <h1 className="mt-4 font-serif text-4xl font-semibold md:text-5xl">Meet Our Team</h1>
+          <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
             Our talented stylists and threading specialists bring years of expertise and
             a passion for making every client look and feel their best.
           </p>
@@ -57,10 +58,7 @@ export default function Team() {
         )}
 
         <div className="mt-16 text-center">
-          <Link
-            to="/book"
-            className="rounded-full bg-rose-500 px-8 py-3 text-base font-semibold text-white hover:bg-rose-600 transition-colors"
-          >
+          <Link to="/book" className="btn-primary">
             Book with Our Team
           </Link>
         </div>

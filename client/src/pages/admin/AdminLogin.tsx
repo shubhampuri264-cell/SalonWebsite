@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Scissors } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { isOwner } from '@/utils/isOwner';
 
 const loginSchema = z.object({
   identifier: z.string().min(1, 'Username or email is required'),
@@ -15,12 +16,17 @@ type LoginValues = z.infer<typeof loginSchema>;
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const { session, signIn, isLoading, error, clearError } = useAuthStore();
+  const { session, signIn, signOut, isLoading, error, clearError } = useAuthStore();
 
-  // Redirect if already logged in
+  // Only the owner is forwarded to the dashboard. A signed-in customer stays
+  // here and is told why — redirecting them would bounce against
+  // AdminDashboard's own owner check and loop forever.
+  const ownerSignedIn = isOwner(session);
+  const nonOwnerSignedIn = !!session && !ownerSignedIn;
+
   useEffect(() => {
-    if (session) navigate('/admin/dashboard', { replace: true });
-  }, [session, navigate]);
+    if (ownerSignedIn) navigate('/admin/dashboard', { replace: true });
+  }, [ownerSignedIn, navigate]);
 
   const {
     register,
@@ -48,6 +54,24 @@ export default function AdminLogin() {
             Sign in with owner email, or owner username if configured.
           </p>
         </div>
+
+        {nonOwnerSignedIn && (
+          <p
+            className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800"
+            role="alert"
+          >
+            You are signed in as {session?.user?.email}, which is not the owner
+            account.{' '}
+            <button
+              type="button"
+              onClick={signOut}
+              className="font-semibold underline"
+            >
+              Sign out
+            </button>{' '}
+            to use different credentials.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
           <div>

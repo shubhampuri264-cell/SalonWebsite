@@ -18,6 +18,16 @@ interface BookAppointmentParams extends Omit<CreateAppointmentPayload, 'stylist_
 export async function createBooking(
   params: BookAppointmentParams
 ): Promise<Appointment> {
+  // The RPC only knows about appointment overlap. Owner-set blocked slots
+  // (vacation, breaks) are enforced here so every caller is covered, whether
+  // the stylist was chosen explicitly or resolved from 'anyone'.
+  await assertNotBlocked(
+    params.stylist_id,
+    params.appointment_date,
+    params.appointment_time,
+    params.duration_min
+  );
+
   const { data, error } = await supabaseAdmin.rpc('book_appointment', {
     p_stylist_id: params.stylist_id,
     p_service_id: params.service_id,
@@ -33,19 +43,52 @@ export async function createBooking(
   });
 
   if (error) {
-    if (error.message?.includes('SLOT_TAKEN')) {
-      const err = new Error('This time slot is no longer available') as Error & {
-        status: number;
-        code: string;
-      };
-      err.status = 409;
-      err.code = 'SLOT_TAKEN';
-      throw err;
+    if (error.message?.includes('SLOT_TAKEN') || error.message?.includes('SLOT_BLOCKED')) {
+      throw slotTakenError('This time slot is no longer available');
     }
     throw new Error(`Booking failed: ${error.message}`);
   }
 
   return data as Appointment;
+}
+
+function slotTakenError(message: string): Error & { status: number; code: string } {
+  const err = new Error(message) as Error & { status: number; code: string };
+  err.status = 409;
+  err.code = 'SLOT_TAKEN';
+  return err;
+}
+
+/**
+ * Throws a 409 if the requested window overlaps a blocked_slots row for this
+ * stylist. Fails closed: a query error is treated as "cannot confirm free".
+ */
+async function assertNotBlocked(
+  stylistId: string,
+  date: string,
+  time: string,
+  durationMin: number
+): Promise<void> {
+  const { data: blocked, error } = await supabaseAdmin
+    .from('blocked_slots')
+    .select('start_time, end_time')
+    .eq('stylist_id', stylistId)
+    .eq('blocked_date', date);
+
+  if (error) {
+    throw new Error(`Failed to check blocked slots: ${error.message}`);
+  }
+
+  const requestedStart = toMinutes(time);
+  const requestedEnd = requestedStart + durationMin;
+
+  const isBlocked = (blocked ?? []).some(
+    (slot) => toMinutes(slot.start_time) < requestedEnd && toMinutes(slot.end_time) > requestedStart
+  );
+
+  if (isBlocked) {
+    throw slotTakenError('This time slot is no longer available');
+  }
 }
 
 /**
@@ -73,36 +116,44 @@ export async function resolveAnyoneStylist(
   const requestedEnd = requestedStart + durationMin;
 
   for (const stylist of stylists) {
-    const { data: appointments, error: appointmentsError } = await supabaseAdmin
-      .from('appointments')
-      .select('appointment_time, duration_min')
-      .eq('stylist_id', stylist.id)
-      .eq('appointment_date', date)
-      .neq('status', 'cancelled');
+    const [appointments, blocked] = await Promise.all([
+      supabaseAdmin
+        .from('appointments')
+        .select('appointment_time, duration_min')
+        .eq('stylist_id', stylist.id)
+        .eq('appointment_date', date)
+        .neq('status', 'cancelled'),
+      supabaseAdmin
+        .from('blocked_slots')
+        .select('start_time, end_time')
+        .eq('stylist_id', stylist.id)
+        .eq('blocked_date', date),
+    ]);
 
-    if (appointmentsError) {
-      throw new Error(`Failed to load stylist availability: ${appointmentsError.message}`);
+    const queryError = appointments.error ?? blocked.error;
+    if (queryError) {
+      throw new Error(`Failed to load stylist availability: ${queryError.message}`);
     }
 
-    const hasOverlap = (appointments ?? []).some((appt) => {
+    const hasOverlap = (appointments.data ?? []).some((appt) => {
       const existingStart = toMinutes(appt.appointment_time);
-      const existingEnd = existingStart + appt.duration_min;
-      return existingStart < requestedEnd && existingEnd > requestedStart;
+      return existingStart < requestedEnd && existingStart + appt.duration_min > requestedStart;
     });
 
-    if (!hasOverlap) {
+    // A stylist blocked for part of the window is not a candidate. Skipping
+    // them here means the next free stylist gets picked instead of the caller
+    // receiving a 409 for a slot another stylist could have taken.
+    const isBlocked = (blocked.data ?? []).some(
+      (slot) => toMinutes(slot.start_time) < requestedEnd && toMinutes(slot.end_time) > requestedStart
+    );
+
+    if (!hasOverlap && !isBlocked) {
       availableIds.push(stylist.id);
     }
   }
 
   if (!availableIds.length) {
-    const err = new Error('No stylists available for this slot') as Error & {
-      status: number;
-      code: string;
-    };
-    err.status = 409;
-    err.code = 'SLOT_TAKEN';
-    throw err;
+    throw slotTakenError('No stylists available for this slot');
   }
 
   // Pick first available

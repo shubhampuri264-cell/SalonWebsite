@@ -4,14 +4,243 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Icon Studio — Hair Salon & Threading Studio in New York. Book appointments online." />
-    <title>Icon Studio | Hair Salon & Threading Studio</title>
+
+    <!--
+      The tags below are deliberately static rather than react-helmet-async.
+      This is a client-rendered SPA (vercel.json rewrites every non-API path to
+      this file), so the raw HTML a crawler receives is this shell with an empty
+      #root. Googlebot renders JavaScript on a delayed second pass, but Bing,
+      Meta's link scraper, iMessage/WhatsApp/Slack unfurls, Yelp, Apple Maps and
+      most AI crawlers do not execute JS at all. Anything that must survive
+      without JavaScript belongs here, not in a <Helmet>.
+
+      Values describe the homepage. Per-route <Helmet> blocks override the title
+      and description on other routes for the JS-rendering crawlers.
+    -->
+    <title>Icon Studio | Hair Salon &amp; Threading Studio in Sunnyside, Queens</title>
+    <meta
+      name="description"
+      content="Icon Studio is a boutique hair salon and eyebrow threading studio at 39-46 Queens Blvd, Sunnyside, Queens. Balayage, keratin, color, threading, waxing, facials and lashes. Open 7 days, 10am-8pm. Book online."
+    />
+    <link rel="canonical" href="https://iconht.studio/" />
+    <!--
+      max-image-preview:large only. "index, follow" is the default when no robots
+      directive is present, so stating it here would buy nothing and would collide
+      with the "noindex, nofollow" that <NoIndex /> adds on admin, profile and 404
+      routes — leaving two contradictory robots tags on the same page. Directives
+      from separate tags are combined, so this one stays compatible with that.
+    -->
+    <meta name="robots" content="max-image-preview:large" />
+
+    <!-- Open Graph — controls the preview card in iMessage, WhatsApp, Slack,
+         Facebook and Instagram DMs. og:image must be an absolute URL. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Icon Studio" />
+    <meta
+      property="og:title"
+      content="Icon Studio | Hair Salon &amp; Threading Studio in Sunnyside, Queens"
+    />
+    <meta
+      property="og:description"
+      content="Precision cuts, balayage, color and expert eyebrow threading on Queens Blvd. Open 7 days, 10am-8pm. Book online in under two minutes."
+    />
+    <meta property="og:url" content="https://iconht.studio/" />
+    <meta property="og:image" content="https://iconht.studio/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Icon Studio — hair salon and threading studio in Sunnyside, Queens"
+    />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Icon Studio | Hair Salon &amp; Threading Studio in Sunnyside, Queens"
+    />
+    <meta
+      name="twitter:description"
+      content="Precision cuts, balayage, color and expert eyebrow threading on Queens Blvd. Open 7 days."
+    />
+    <meta name="twitter:image" content="https://iconht.studio/og-image.jpg" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..500&family=Inter:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
+
+    <!--
+      LocalBusiness structured data. Feeds the Google/Bing knowledge panel and
+      makes the salon eligible for service-specific queries ("keratin treatment
+      sunnyside") rather than only generic ones.
+
+      aggregateRating is deliberately absent: Google's structured-data policy
+      prohibits self-serving review markup on a business's own site. The star
+      rating comes from Google Business Profile.
+
+      Prices mirror supabase/migrations/013_remove_male_category_july_2026.sql.
+      Keep them in sync when the catalog changes, or drop the makesOffer entry.
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HairSalon",
+        "@id": "https://iconht.studio/#business",
+        "name": "Icon Studio",
+        "description": "A boutique hair salon and threading studio in Sunnyside, Queens. Precision cuts, balayage, color, eyebrow threading, waxing, facials and lash extensions. Open 7 days, walk-ins welcome.",
+        "url": "https://iconht.studio/",
+        "telephone": "+17182556940",
+        "email": "sumipuri34@gmail.com",
+        "image": "https://iconht.studio/og-image.jpg",
+        "logo": "https://iconht.studio/favicon.svg",
+        "priceRange": "$$",
+        "currenciesAccepted": "USD",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "39-46 Queens Blvd",
+          "addressLocality": "Sunnyside",
+          "addressRegion": "NY",
+          "postalCode": "11104",
+          "addressCountry": "US"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 40.7435241,
+          "longitude": -73.9245996
+        },
+        "hasMap": "https://maps.google.com/?cid=12246444213783943625",
+        "openingHoursSpecification": [
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": [
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday",
+              "Saturday",
+              "Sunday"
+            ],
+            "opens": "10:00",
+            "closes": "20:00"
+          }
+        ],
+        "areaServed": [
+          { "@type": "Place", "name": "Sunnyside, Queens, NY" },
+          { "@type": "Place", "name": "Woodside, Queens, NY" },
+          { "@type": "Place", "name": "Long Island City, Queens, NY" },
+          { "@type": "Place", "name": "Astoria, Queens, NY" }
+        ],
+        "sameAs": [
+          "https://www.instagram.com/sumilovestyle/",
+          "https://www.tiktok.com/@sumi91_"
+        ],
+        "employee": [
+          { "@type": "Person", "name": "Sumita Karki", "jobTitle": "Hair Stylist" },
+          {
+            "@type": "Person",
+            "name": "Sazana Aryal",
+            "jobTitle": "Threading & Facial Specialist"
+          }
+        ],
+        "makesOffer": [
+          {
+            "@type": "Offer",
+            "itemOffered": { "@type": "Service", "name": "Balayage" },
+            "priceSpecification": {
+              "@type": "PriceSpecification",
+              "minPrice": 200,
+              "maxPrice": 300,
+              "priceCurrency": "USD"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": { "@type": "Service", "name": "Keratin Treatment" },
+            "priceSpecification": {
+              "@type": "PriceSpecification",
+              "minPrice": 250,
+              "maxPrice": 350,
+              "priceCurrency": "USD"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": { "@type": "Service", "name": "Highlights" },
+            "priceSpecification": {
+              "@type": "PriceSpecification",
+              "minPrice": 100,
+              "maxPrice": 250,
+              "priceCurrency": "USD"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": { "@type": "Service", "name": "Single Process Color" },
+            "priceSpecification": {
+              "@type": "PriceSpecification",
+              "price": 70,
+              "priceCurrency": "USD"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": { "@type": "Service", "name": "Wash and Cut" },
+            "priceSpecification": {
+              "@type": "PriceSpecification",
+              "price": 40,
+              "priceCurrency": "USD"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": { "@type": "Service", "name": "Eyebrow Threading" },
+            "priceSpecification": {
+              "@type": "PriceSpecification",
+              "price": 8,
+              "priceCurrency": "USD"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": { "@type": "Service", "name": "Eyelashes - Mink" },
+            "priceSpecification": {
+              "@type": "PriceSpecification",
+              "price": 125,
+              "priceCurrency": "USD"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": { "@type": "Service", "name": "Repechage Four Layer Facial" },
+            "priceSpecification": {
+              "@type": "PriceSpecification",
+              "price": 80,
+              "priceCurrency": "USD"
+            }
+          }
+        ],
+        "potentialAction": {
+          "@type": "ReserveAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://iconht.studio/book",
+            "inLanguage": "en-US",
+            "actionPlatform": [
+              "http://schema.org/DesktopWebPlatform",
+              "http://schema.org/MobileWebPlatform"
+            ]
+          },
+          "result": {
+            "@type": "Reservation",
+            "name": "Book an appointment at Icon Studio"
+          }
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

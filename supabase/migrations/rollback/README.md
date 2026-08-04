@@ -14,6 +14,9 @@ regression that can't be patched with another forward migration in time.
 Down-migrations revert **schema**, not **data**. Anything the forward migration
 deleted/transformed is gone. Specifically:
 
+- **014.down**: restores the migration-008 function body verbatim. If a
+  migration above 014 also replaced `book_appointment`, running this reverts
+  that too — check for later definitions first.
 - **008.down**: cannot restore which rows were originally `pending` before the
   backfill — it only reverts the RPC default going forward.
 - **007.down**: only safe to run alongside `006.down`. In isolation it kills

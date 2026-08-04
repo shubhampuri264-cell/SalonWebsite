@@ -14,30 +14,32 @@ export default function Location() {
       </Helmet>
 
       <div className="container mx-auto px-4 py-16 md:px-6">
-        <div className="mb-12 text-center">
-          <h1 className="font-serif text-4xl font-semibold md:text-5xl">
-            Location & Hours
+        <div className="mb-14 text-center">
+          <span className="eyebrow eyebrow--center">Come Visit</span>
+          <h1 className="mt-4 font-serif text-4xl font-semibold md:text-5xl">
+            Location &amp; Hours
           </h1>
-          <p className="mt-4 text-muted-foreground">
-            Come visit us in New York City.
+          <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
+            Find us in the heart of Sunnyside, Queens.
           </p>
         </div>
 
         <div className="grid gap-10 lg:grid-cols-2">
           {/* Salon photo */}
-          <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
+          <div className="overflow-hidden rounded-3xl border border-gold-500/20 shadow-sm">
             <img
               src="/location-salon.jpeg"
               alt="Icon Studio salon"
-              className="h-[400px] w-full object-cover"
+              className="h-64 w-full object-cover sm:h-80 lg:h-full lg:min-h-[420px]"
             />
           </div>
 
           {/* Info */}
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-6">
             {/* Contact details */}
-            <div>
-              <h2 className="mb-4 font-serif text-2xl font-semibold">Find Us</h2>
+            <div className="card-lux p-6">
+              <h2 className="font-serif text-2xl font-semibold">Find Us</h2>
+              <div className="hairline mb-4 mt-3 w-14" />
               <ul className="space-y-4 text-sm">
                 <li className="flex items-start gap-3">
                   <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-rose-500" aria-hidden="true" />
@@ -96,11 +98,12 @@ export default function Location() {
             </div>
 
             {/* Hours table */}
-            <div>
-              <h2 className="mb-4 font-serif text-2xl font-semibold flex items-center gap-2">
-                <Clock className="h-5 w-5 text-rose-500" aria-hidden="true" />
+            <div className="card-lux p-6">
+              <h2 className="flex items-center gap-2 font-serif text-2xl font-semibold">
+                <Clock className="h-5 w-5 text-gold-600" aria-hidden="true" />
                 Hours
               </h2>
+              <div className="hairline mb-4 mt-3 w-14" />
               <table className="w-full text-sm">
                 <tbody>
                   {HOURS_DISPLAY.map(({ day, hours }) => (

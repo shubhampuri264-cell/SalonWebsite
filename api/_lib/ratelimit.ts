@@ -1,9 +1,13 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { envValue } from './env';
 
 type LimiterKey =
   | 'booking'
+  | 'cancel'
+  | 'contact'
+  | 'contactGlobal'
   | 'admin'
   | 'customer'
   | 'emailResend'
@@ -13,6 +17,9 @@ type LimiterKey =
 
 interface LimiterSet {
   booking: Ratelimit;
+  cancel: Ratelimit;
+  contact: Ratelimit;
+  contactGlobal: Ratelimit;
   admin: Ratelimit;
   customer: Ratelimit;
   emailResend: Ratelimit;
@@ -30,20 +37,11 @@ let cachedLimiters: LimiterSet | null | undefined;
 // so local work and PR previews don't need Upstash.
 const IS_PRODUCTION = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
 
-// Strip surrounding single/double quotes from an env var value.
-// Vercel's env var UI stores the value verbatim — including any quotes that
-// were copy-pasted from a .env file. dotenv (used locally) strips them
-// automatically; this helper closes that gap for serverless.
-function unquote(s: string | undefined): string | undefined {
-  if (!s) return s;
-  return s.replace(/^['"]|['"]$/g, '');
-}
-
 function getLimiters(): LimiterSet | null {
   if (cachedLimiters !== undefined) return cachedLimiters;
 
-  const url = unquote(process.env.UPSTASH_REDIS_REST_URL);
-  const token = unquote(process.env.UPSTASH_REDIS_REST_TOKEN);
+  const url = envValue('UPSTASH_REDIS_REST_URL');
+  const token = envValue('UPSTASH_REDIS_REST_TOKEN');
   if (!url || !token) {
     console.warn('[ratelimit] UPSTASH_REDIS_REST_URL/TOKEN missing — rate limiting disabled');
     cachedLimiters = null;
@@ -57,6 +55,35 @@ function getLimiters(): LimiterSet | null {
       redis,
       limiter: Ratelimit.slidingWindow(10, '1 h'),
       prefix: 'rl:book',
+      analytics: false,
+    }),
+    // Cancellations now send an email, so this endpoint spends Resend quota.
+    // 20/hour per IP is far above any real customer (one click from an email
+    // link) while bounding what a script pointed at the endpoint can burn.
+    cancel: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(20, '1 h'),
+      prefix: 'rl:cancel',
+      analytics: false,
+    }),
+    // Contact form — public, unauthenticated, and it sends mail, so it is the
+    // most abusable endpoint in the app. 3/hour per IP.
+    contact: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(3, '1 h'),
+      prefix: 'rl:contact',
+      analytics: false,
+    }),
+    // Second layer, keyed on a constant rather than the caller: a global cap on
+    // contact emails per day. Per-IP limits do nothing against a spammer
+    // rotating addresses, and Resend's free tier is 100 emails/day shared with
+    // booking confirmations, reminders and follow-ups — so an unbounded contact
+    // form can silently stop customers receiving their confirmations. 30/day
+    // leaves the majority of the quota for transactional mail.
+    contactGlobal: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(30, '1 d'),
+      prefix: 'rl:contact:global',
       analytics: false,
     }),
     // 120 admin requests per minute per IP — generous for a single owner's UI clicks,

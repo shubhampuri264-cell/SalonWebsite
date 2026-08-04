@@ -26,7 +26,7 @@ const createSchema = z.object({
   category: z.enum(SERVICE_CATEGORIES),
   name: z.string().min(2).max(100),
   description: z.string().max(500).optional(),
-  price_min: z.number().positive(),
+  price_min: z.number().nonnegative(),
   price_max: z.number().positive().nullable().optional(),
   duration_min: z.number().int().positive(),
 });
@@ -56,7 +56,7 @@ adminServicesRouter.post('/', async (req, res, next) => {
 const updateSchema = z.object({
   name: z.string().min(2).max(100).optional(),
   description: z.string().max(500).optional(),
-  price_min: z.number().positive().optional(),
+  price_min: z.number().nonnegative().optional(),
   price_max: z.number().positive().nullable().optional(),
   duration_min: z.number().int().positive().optional(),
   is_active: z.boolean().optional(),

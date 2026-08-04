@@ -1,4 +1,3 @@
-import { DollarSign } from 'lucide-react';
 import type { Service } from '@luxe/shared';
 import { cn } from '@/utils/cn';
 
@@ -9,20 +8,17 @@ interface ServiceCardProps {
 }
 
 export default function ServiceCard({ service, selected, onClick }: ServiceCardProps) {
+  const consultationOnly = Number(service.price_min) === 0 && !service.price_max;
   const priceDisplay = service.price_max
-    ? `${service.price_min} – ${service.price_max}`
+    ? `${service.price_min}–${service.price_max}`
     : `${service.price_min}`;
 
   return (
     <article
       className={cn(
-        'rounded-xl border p-5 transition-all',
-        onClick
-          ? 'cursor-pointer hover:border-rose-400 hover:shadow-md'
-          : '',
-        selected
-          ? 'border-rose-500 bg-rose-50 shadow-md'
-          : 'border-border bg-white'
+        'card-lux flex flex-col p-6',
+        onClick && 'card-lux--interactive cursor-pointer',
+        selected && 'border-rose-500/60 bg-rose-50/60 ring-2 ring-rose-500'
       )}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
@@ -31,14 +27,18 @@ export default function ServiceCard({ service, selected, onClick }: ServiceCardP
       aria-pressed={selected}
     >
       <h3 className="font-serif text-lg font-semibold">{service.name}</h3>
-      <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+      <p className="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground line-clamp-2">
         {service.description}
       </p>
-      <div className="mt-4 flex items-center gap-4 text-sm">
-        <span className="flex items-center gap-1 font-medium text-rose-600">
-          <DollarSign className="h-4 w-4" aria-hidden="true" />
-          {priceDisplay}
-        </span>
+      <div className="mt-5 flex items-center justify-between border-t border-gold-500/20 pt-4">
+        {consultationOnly ? (
+          <span className="font-serif text-lg font-semibold">Price on consultation</span>
+        ) : (
+          <span className="font-serif text-lg font-semibold tabular-nums">
+            <span className="text-gold-600">$</span>
+            {priceDisplay}
+          </span>
+        )}
       </div>
     </article>
   );

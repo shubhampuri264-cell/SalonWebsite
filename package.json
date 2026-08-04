@@ -11,7 +11,8 @@
     "dev": "concurrently \"npm run dev -w client\" \"npm run dev -w server\"",
     "build": "npm run build -w client && npm run build -w server",
     "lint": "npm run lint -w client && npm run lint -w server",
-    "typecheck": "npm run typecheck -w client && npm run typecheck -w server"
+    "typecheck": "npm run typecheck -w client && npm run typecheck -w server && npm run typecheck:api",
+    "typecheck:api": "tsc -p tsconfig.api.json"
   },
   "devDependencies": {
     "@vercel/node": "^5.6.24",

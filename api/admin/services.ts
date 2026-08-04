@@ -4,13 +4,13 @@ import { supabaseAdmin } from '../_lib/supabase';
 import { verifyAdminAuth } from '../_lib/auth';
 import { enforceRateLimit } from '../_lib/ratelimit';
 
-const SERVICE_CATEGORIES = ['hair', 'threading', 'facial', 'waxing', 'special_treatment', 'male'] as const;
+const SERVICE_CATEGORIES = ['hair', 'threading', 'facial', 'waxing', 'special_treatment'] as const;
 
 const createSchema = z.object({
   category: z.enum(SERVICE_CATEGORIES),
   name: z.string().trim().min(2).max(100),
   description: z.string().max(500).nullable().optional(),
-  price_min: z.number().positive(),
+  price_min: z.number().nonnegative(),
   price_max: z.number().positive().nullable().optional(),
   duration_min: z.number().int().positive(),
 });
@@ -18,7 +18,7 @@ const createSchema = z.object({
 const updateSchema = z.object({
   name: z.string().trim().min(2).max(100).optional(),
   description: z.string().max(500).nullable().optional(),
-  price_min: z.number().positive().optional(),
+  price_min: z.number().nonnegative().optional(),
   price_max: z.number().positive().nullable().optional(),
   duration_min: z.number().int().positive().optional(),
   is_active: z.boolean().optional(),

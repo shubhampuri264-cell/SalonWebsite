@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import ServiceCard from '@/components/ServiceCard';
+import Reveal from '@/components/Reveal';
 import { getServices } from '@/api/services';
 import { SERVICE_CATEGORY_LABELS } from '@luxe/shared';
 import type { Service, ServiceCategory } from '@luxe/shared';
@@ -28,9 +29,10 @@ export default function Services() {
 
       <div className="container mx-auto px-4 py-16 md:px-6">
         {/* Header */}
-        <div className="mb-12 text-center">
-          <h1 className="font-serif text-4xl font-semibold md:text-5xl">Our Services</h1>
-          <p className="mt-4 max-w-xl mx-auto text-muted-foreground">
+        <div className="mb-14 text-center">
+          <span className="eyebrow eyebrow--center">The Menu</span>
+          <h1 className="mt-4 font-serif text-4xl font-semibold md:text-5xl">Our Services</h1>
+          <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
             From precision cuts and vibrant color to expert threading, we offer a full range
             of salon services for every look.
           </p>
@@ -56,26 +58,28 @@ export default function Services() {
               const services = grouped[cat];
               if (!services?.length) return null;
               return (
-                <section key={cat}>
-                  <h2 className="mb-6 font-serif text-2xl font-semibold text-rose-600">
-                    {SERVICE_CATEGORY_LABELS[cat]}
-                  </h2>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {services.map((service) => (
-                      <ServiceCard key={service.id} service={service} />
-                    ))}
-                  </div>
-                </section>
+                <Reveal key={cat}>
+                  <section>
+                    <div className="mb-6">
+                      <h2 className="font-serif text-2xl font-semibold">
+                        {SERVICE_CATEGORY_LABELS[cat]}
+                      </h2>
+                      <div className="hairline mt-3 w-16" />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {services.map((service) => (
+                        <ServiceCard key={service.id} service={service} />
+                      ))}
+                    </div>
+                  </section>
+                </Reveal>
               );
             })}
           </div>
         )}
 
         <div className="mt-16 text-center">
-          <Link
-            to="/book"
-            className="rounded-full bg-rose-500 px-8 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-rose-600 hover:shadow-lg"
-          >
+          <Link to="/book" className="btn-primary">
             Book a Service
           </Link>
         </div>

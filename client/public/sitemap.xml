@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Public routes only, mirroring client/src/App.tsx. Deliberately excluded:
+  /booking/confirmation and /booking/cancel (transactional, tokenised),
+  /profile and /auth/reset (private), and everything under /admin.
+  Add new public routes here when they ship.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://iconht.studio/</loc>
+    <lastmod>2026-08-02</lastmod>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://iconht.studio/services</loc>
+    <lastmod>2026-08-02</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://iconht.studio/book</loc>
+    <lastmod>2026-08-02</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://iconht.studio/location</loc>
+    <lastmod>2026-08-02</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://iconht.studio/team</loc>
+    <lastmod>2026-08-02</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://iconht.studio/gallery</loc>
+    <lastmod>2026-08-02</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://iconht.studio/contact</loc>
+    <lastmod>2026-08-02</lastmod>
+    <priority>0.7</priority>
+  </url>
+</urlset>

@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import NoIndex from '@/components/NoIndex';
 import { supabase } from '@/api/supabase';
 import { useCustomerAuthStore } from '@/store/customerAuthStore';
 import { useAuthStore } from '@/store/authStore';
@@ -61,6 +62,9 @@ export default function App() {
           path="/admin/*"
           element={
             <Suspense fallback={<PageLoader />}>
+              {/* One NoIndex here covers every admin screen — they all render
+                  under this branch, so per-page Helmet blocks are unnecessary. */}
+              <NoIndex />
               <Routes>
                 <Route path="login" element={<AdminLogin />} />
                 <Route path="*" element={<AdminDashboard />} />
@@ -85,22 +89,56 @@ export default function App() {
                     <Route path="/location" element={<Location />} />
                     <Route path="/book" element={<Book />} />
                     <Route path="/contact" element={<Contact />} />
+                    {/* Private or single-use routes: keep them out of search
+                        results. See components/NoIndex. */}
                     <Route
                       path="/booking/confirmation"
-                      element={<BookingConfirmation />}
+                      element={
+                        <>
+                          <NoIndex />
+                          <BookingConfirmation />
+                        </>
+                      }
                     />
-                    <Route path="/booking/cancel" element={<CancelPage />} />
-                    <Route path="/profile" element={<CustomerProfile />} />
-                    <Route path="/auth/reset" element={<ResetPassword />} />
+                    <Route
+                      path="/booking/cancel"
+                      element={
+                        <>
+                          <NoIndex />
+                          <CancelPage />
+                        </>
+                      }
+                    />
+                    <Route
+                      path="/profile"
+                      element={
+                        <>
+                          <NoIndex />
+                          <CustomerProfile />
+                        </>
+                      }
+                    />
+                    <Route
+                      path="/auth/reset"
+                      element={
+                        <>
+                          <NoIndex />
+                          <ResetPassword />
+                        </>
+                      }
+                    />
                     <Route
                       path="*"
                       element={
-                        <div className="flex h-64 flex-col items-center justify-center gap-4">
-                          <h1 className="text-3xl">404 — Page Not Found</h1>
-                          <a href="/" className="text-rose-500 underline">
-                            Return home
-                          </a>
-                        </div>
+                        <>
+                          <NoIndex />
+                          <div className="flex h-64 flex-col items-center justify-center gap-4">
+                            <h1 className="text-3xl">404 — Page Not Found</h1>
+                            <a href="/" className="text-rose-500 underline">
+                              Return home
+                            </a>
+                          </div>
+                        </>
                       }
                     />
                   </Routes>

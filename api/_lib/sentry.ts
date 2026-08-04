@@ -9,17 +9,13 @@
 //      captureError helper does the flush for callers.
 
 import * as Sentry from '@sentry/node';
-
-function unquote(s: string | undefined): string | undefined {
-  if (!s) return s;
-  return s.replace(/^['"]|['"]$/g, '');
-}
+import { envValue } from './env';
 
 let initialized = false;
 
 function initSentry(): boolean {
   if (initialized) return true;
-  const dsn = unquote(process.env.SENTRY_DSN);
+  const dsn = envValue('SENTRY_DSN');
   if (!dsn) return false;
 
   Sentry.init({

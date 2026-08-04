@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, AlertCircle } from 'lucide-react';
 import { createBlockedSlot, getBlockedSlots, deleteBlockedSlot } from '@/api/admin';
 import { getStylists } from '@/api/stylists';
 import { useAuthStore } from '@/store/authStore';
@@ -19,6 +19,11 @@ const blockSchema = z.object({
 
 type BlockFormValues = z.infer<typeof blockSchema>;
 
+function messageOf(err: unknown, fallback: string): string {
+  const message = err instanceof Error ? err.message.trim() : '';
+  return message || fallback;
+}
+
 export default function AdminBlockSlots() {
   const { session } = useAuthStore();
   const token = session?.access_token ?? '';
@@ -27,6 +32,11 @@ export default function AdminBlockSlots() {
   const [stylists, setStylists] = useState<Stylist[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  // Every failure here used to go to console.error only, so a rejected block
+  // looked identical to a successful one: the form closed, the row never
+  // appeared, and the owner believed the stylist was unavailable when the
+  // slot was in fact still bookable.
+  const [error, setError] = useState<string | null>(null);
 
   const {
     register,
@@ -40,11 +50,19 @@ export default function AdminBlockSlots() {
       getBlockedSlots({}, token).then(setBlockedSlots),
       getStylists().then(setStylists),
     ])
-      .catch(console.error)
+      .catch((err) => {
+        console.error(err);
+        setError(messageOf(err, 'Could not load blocked slots. Refresh to try again.'));
+      })
       .finally(() => setLoading(false));
   }, [token]);
 
   const onSubmit = async (data: BlockFormValues) => {
+    setError(null);
+    if (data.end_time <= data.start_time) {
+      setError('End time must be after start time.');
+      return;
+    }
     try {
       const created = await createBlockedSlot(
         { ...data, reason: data.reason ?? null } as any,
@@ -55,16 +73,19 @@ export default function AdminBlockSlots() {
       setShowForm(false);
     } catch (err) {
       console.error(err);
+      setError(messageOf(err, 'Could not save the block. The slot is still bookable.'));
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this blocked slot?')) return;
+    setError(null);
     try {
       await deleteBlockedSlot(id, token);
       setBlockedSlots((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
       console.error(err);
+      setError(messageOf(err, 'Could not delete the block. It is still in effect.'));
     }
   };
 
@@ -80,6 +101,23 @@ export default function AdminBlockSlots() {
           Add Block
         </button>
       </div>
+
+      {error && (
+        <div
+          role="alert"
+          className="mt-6 flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="flex-1">{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="shrink-0 font-medium underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Add form */}
       {showForm && (

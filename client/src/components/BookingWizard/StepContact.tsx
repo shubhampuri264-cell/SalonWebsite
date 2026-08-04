@@ -63,6 +63,7 @@ export default function StepContact() {
           appointment_date: selectedDate,
           appointment_time: selectedTime,
           notes: data.notes,
+          marketing_consent: data.marketing_consent ?? false,
         },
         session?.access_token
       );
@@ -208,6 +209,25 @@ export default function StepContact() {
             {errors.terms.message}
           </p>
         )}
+
+        {/*
+          Unchecked by default and never required — pre-ticking an opt-in is not
+          consent, and in several jurisdictions is not legally valid consent
+          either. Kept visually secondary to the cancellation-policy box above,
+          which genuinely does gate submission.
+        */}
+        <div className="flex items-start gap-3">
+          <input
+            {...register('marketing_consent')}
+            id="marketing_consent"
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded accent-rose-500"
+          />
+          <label htmlFor="marketing_consent" className="text-sm text-muted-foreground">
+            Send me occasional offers and news from Icon Studio. No spam — you can
+            opt out any time.
+          </label>
+        </div>
 
         {submitError && (
           <div

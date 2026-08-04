@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Instagram, Send, CheckCircle } from 'lucide-react';
+import { Instagram, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { contactFormSchema, type ContactFormValues } from '@/utils/validators';
+import { sendContactMessage } from '@/api/contact';
 import { SALON_INFO } from '@/utils/dates';
 
 export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const {
     register,
@@ -18,10 +20,24 @@ export default function Contact() {
     resolver: zodResolver(contactFormSchema),
   });
 
+  // Previously this built a `mailto:` and handed off to the OS mail client.
+  // On mobile, and for anyone using webmail with no registered handler, that
+  // does nothing visible and the enquiry is lost — the form reported success
+  // either way. It now posts to /api/contact, which delivers through Resend.
   const onSubmit = async (data: ContactFormValues) => {
-    window.location.href = `mailto:${SALON_INFO.email}?subject=Message from ${encodeURIComponent(data.name)}&body=${encodeURIComponent(data.message)}%0A%0AFrom%3A ${encodeURIComponent(data.email)}`;
-    setSubmitted(true);
-    reset();
+    setSendError(null);
+    try {
+      await sendContactMessage(data);
+      setSubmitted(true);
+      reset();
+    } catch (err) {
+      // Keep the typed message in the fields so a retry costs nothing.
+      setSendError(
+        err instanceof Error && err.message
+          ? err.message
+          : `Something went wrong. Please call us on ${SALON_INFO.phone}.`,
+      );
+    }
   };
 
   return (
@@ -35,9 +51,10 @@ export default function Contact() {
       </Helmet>
 
       <div className="container mx-auto px-4 py-16 md:px-6">
-        <div className="mb-12 text-center">
-          <h1 className="font-serif text-4xl font-semibold md:text-5xl">Get in Touch</h1>
-          <p className="mt-4 text-muted-foreground">
+        <div className="mb-14 text-center">
+          <span className="eyebrow eyebrow--center">Say Hello</span>
+          <h1 className="mt-4 font-serif text-4xl font-semibold md:text-5xl">Get in Touch</h1>
+          <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
             Have a question? We'd love to hear from you.
           </p>
         </div>
@@ -46,9 +63,10 @@ export default function Contact() {
           {submitted ? (
             <div className="flex flex-col items-center gap-4 rounded-2xl border border-rose-200 bg-rose-50 p-10 text-center">
               <CheckCircle className="h-12 w-12 text-rose-500" aria-hidden="true" />
-              <h2 className="font-serif text-2xl font-semibold">Email Ready!</h2>
+              <h2 className="font-serif text-2xl font-semibold">Message Sent!</h2>
               <p className="text-muted-foreground">
-                Your email app should have opened with your message pre-filled. Just hit send and we'll get back to you soon.
+                Thanks for getting in touch — your message is on its way to the salon and we'll
+                reply to the email address you gave us. In a hurry? Call us on {SALON_INFO.phone}.
               </p>
               <button
                 onClick={() => setSubmitted(false)}
@@ -60,7 +78,7 @@ export default function Contact() {
           ) : (
             <form
               onSubmit={handleSubmit(onSubmit)}
-              className="space-y-5 rounded-2xl border border-border bg-white p-8 shadow-sm"
+              className="card-lux space-y-5 p-8 shadow-sm"
               noValidate
             >
               <div>
@@ -120,10 +138,48 @@ export default function Contact() {
                 )}
               </div>
 
+              {/*
+                Honeypot. Hidden from sighted users and from screen readers, and
+                skipped by keyboard tabbing, so a real visitor can never fill it
+                in — but form-filling bots populate every input in the DOM.
+                Positioned off-screen rather than `display: none`, which the
+                better bots know to skip. Server drops any submission that
+                arrives with it set, and still returns 200.
+              */}
+              <div className="pointer-events-none absolute left-[-9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+                <label htmlFor="website">Leave this field empty</label>
+                <input
+                  {...register('website')}
+                  id="website"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
+
+              {sendError && (
+                <div
+                  className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm"
+                  role="alert"
+                >
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
+                  <div>
+                    <p className="text-destructive">{sendError}</p>
+                    <p className="mt-1 text-muted-foreground">
+                      Your message is still here — press Send Message to try again, or call{' '}
+                      <a href={`tel:${SALON_INFO.phone.replace(/\D/g, '')}`} className="underline">
+                        {SALON_INFO.phone}
+                      </a>
+                      .
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-rose-500 py-3 text-sm font-semibold text-white hover:bg-rose-600 transition-colors disabled:opacity-50"
+                className="btn-primary w-full disabled:opacity-50"
               >
                 <Send className="h-4 w-4" aria-hidden="true" />
                 {isSubmitting ? 'Sending...' : 'Send Message'}

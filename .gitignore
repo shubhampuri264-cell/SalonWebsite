@@ -8,6 +8,7 @@ dist/
 build/
 .next/
 out/
+.vercel/
 
 # Environment files — never commit secrets
 .env
@@ -15,6 +16,10 @@ out/
 .env.*.local
 .env.*
 *.local
+
+# ...except the template, which holds key names and comments but no values.
+# Must come after .env.* — the last matching pattern wins.
+!.env.example
 
 # Private keys and certificates
 *.pem
@@ -49,18 +54,26 @@ coverage/
 # Claude Code
 .claude/
 
+# These rules are anchored with a leading slash so they match ONLY the
+# directory at the repo root. Unanchored, `scripts/` matched every directory
+# named "scripts" at any depth — including server/src/scripts/, which holds
+# real application code. server/src/scripts/seed.ts survives only because it
+# was tracked before the rule existed; any NEW file added there would have been
+# silently invisible to `git add`, which is exactly how the six untracked
+# modules got missed.
+
 # Print assets
-Html & Images/
+/Html & Images/
 
 # Non-project misc files
-_misc/
+/_misc/
 
 # Raw source images (originals — gallery copies live in client/public/gallery/)
-images/
+/images/
 
 # Scratch/temp scripts
-scratch/
-scripts/
+/scratch/
+/scripts/
 
-graphify-out
+/graphify-out
 .claude/agents/

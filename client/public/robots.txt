@@ -1,0 +1,14 @@
+# Icon Studio — https://iconht.studio
+#
+# Public marketing pages are crawlable. Everything below is either private
+# (admin, customer profile), single-use and tokenised (booking cancel links),
+# or has no standalone meaning to a searcher (booking confirmation).
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /profile
+Disallow: /auth
+Disallow: /booking/
+
+Sitemap: https://iconht.studio/sitemap.xml

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Calendar, Ban, LogOut, Scissors } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { isOwner } from '@/utils/isOwner';
 import AdminAppointments from './AdminAppointments';
 import AdminBlockSlots from './AdminBlockSlots';
 import AdminOverview from './AdminOverview';
@@ -20,11 +21,15 @@ export default function AdminDashboard() {
   const location = useLocation();
   const { session, signOut } = useAuthStore();
 
-  useEffect(() => {
-    if (!session) navigate('/admin/login', { replace: true });
-  }, [session, navigate]);
+  // Gate on owner identity, not merely on having a session — customers can
+  // sign up, and a customer session used to render this whole shell.
+  const allowed = isOwner(session);
 
-  if (!session) return null;
+  useEffect(() => {
+    if (!allowed) navigate('/admin/login', { replace: true });
+  }, [allowed, navigate]);
+
+  if (!allowed) return null;
 
   return (
     <div className="flex min-h-screen bg-stone-50">

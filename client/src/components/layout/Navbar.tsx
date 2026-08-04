@@ -48,19 +48,19 @@ export default function Navbar() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 w-full transition-all duration-300',
+        'sticky top-0 z-50 w-full border-b transition-all duration-300',
         scrolled
-          ? 'bg-white/90 shadow-sm backdrop-blur-md'
-          : 'bg-white'
+          ? 'border-gold-500/25 bg-background/85 shadow-sm backdrop-blur-md'
+          : 'border-transparent bg-background'
       )}
     >
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
         {/* Logo */}
         <Link
           to="/"
-          className="flex items-center gap-2 font-serif text-xl font-semibold tracking-wide text-rose-600"
+          className="flex items-center gap-2.5 font-serif text-xl font-semibold uppercase tracking-[0.14em] text-foreground"
         >
-          <Scissors className="h-5 w-5 text-rose-500" aria-hidden="true" />
+          <Scissors className="h-5 w-5 text-gold-600" aria-hidden="true" />
           Icon Studio
         </Link>
 
@@ -72,8 +72,11 @@ export default function Navbar() {
               to={to}
               className={({ isActive }) =>
                 cn(
-                  'text-sm font-medium transition-colors hover:text-rose-600',
-                  isActive ? 'text-rose-600' : 'text-foreground/80'
+                  'relative text-sm font-medium transition-colors hover:text-rose-700',
+                  'after:absolute after:-bottom-1.5 after:left-0 after:h-px after:bg-gold-500 after:transition-all after:duration-300',
+                  isActive
+                    ? 'text-rose-700 after:w-full'
+                    : 'text-foreground/75 after:w-0 hover:after:w-full'
                 )
               }
             >
@@ -125,7 +128,7 @@ export default function Navbar() {
           )}
           <Link
             to="/book"
-            className="rounded-full bg-rose-500 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-rose-600"
+            className="rounded-full bg-rose-500 px-5 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-rose-600"
           >
             Book Now
           </Link>
@@ -147,7 +150,7 @@ export default function Navbar() {
       {menuOpen && (
         <div
           id="mobile-menu"
-          className="absolute inset-x-0 top-16 z-50 flex flex-col bg-white px-6 pb-8 pt-4 shadow-lg md:hidden"
+          className="absolute inset-x-0 top-16 z-50 flex flex-col border-t border-gold-500/20 bg-background px-6 pb-8 pt-4 shadow-lg md:hidden"
           role="navigation"
           aria-label="Mobile navigation"
         >

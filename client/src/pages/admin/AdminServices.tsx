@@ -16,6 +16,7 @@ interface EditState {
 
 function formatPrice(min: number, max: number | null): string {
   if (max && max !== min) return `$${min}–$${max}`;
+  if (Number(min) === 0) return 'Consultation';
   return `$${min}`;
 }
 
@@ -98,7 +99,7 @@ export default function AdminServices() {
     const duration = parseInt(addState.duration_min, 10);
 
     if (!addState.name.trim()) { setAddError('Name is required'); return; }
-    if (isNaN(priceMin) || priceMin <= 0) { setAddError('Valid price required'); return; }
+    if (isNaN(priceMin) || priceMin < 0) { setAddError('Valid price required'); return; }
     if (isNaN(duration) || duration <= 0) { setAddError('Valid duration required'); return; }
 
     setAddError(null);

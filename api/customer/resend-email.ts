@@ -4,6 +4,7 @@ import { supabaseAdmin } from '../_lib/supabase';
 import { enforceRateLimit } from '../_lib/ratelimit';
 import { sendBookingConfirmationEmail } from '../_lib/emails';
 import { captureError } from '../_lib/sentry';
+import { salonToday } from '../_lib/dates';
 
 const bodySchema = z.object({
   appointment_id: z.string().uuid(),
@@ -56,9 +57,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(409).json({ error: 'Cannot resend confirmation for a cancelled appointment' });
   }
 
-  // No point sending a "your appointment is confirmed" email for a past date
-  const todayLocal = new Date().toISOString().slice(0, 10);
-  if (appointment.appointment_date < todayLocal) {
+  // No point sending a "your appointment is confirmed" email for a past date.
+  // Compared in salon-local time: this function runs with TZ=UTC, where the
+  // date rolls over at 20:00 EDT and would reject a same-evening appointment.
+  if (appointment.appointment_date < salonToday()) {
     return res.status(409).json({ error: 'Appointment is in the past' });
   }
 

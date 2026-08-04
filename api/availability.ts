@@ -2,16 +2,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
 import { supabaseAdmin } from './_lib/supabase';
 import { generateAvailableSlots } from './_lib/timeSlots';
-
-const BUSINESS_HOURS: Record<string, { open: string; close: string } | null> = {
-  Monday:    { open: '10:00', close: '20:00' },
-  Tuesday:   { open: '10:00', close: '20:00' },
-  Wednesday: { open: '10:00', close: '20:00' },
-  Thursday:  { open: '10:00', close: '20:00' },
-  Friday:    { open: '10:00', close: '20:00' },
-  Saturday:  { open: '10:00', close: '20:00' },
-  Sunday:    { open: '10:00', close: '20:00' },
-};
+import { captureError } from './_lib/sentry';
+import { salonToday, salonNowMinutes, addDays } from './_lib/dates';
+import { hoursForDate, BOOKING_HORIZON_DAYS, MIN_LEAD_MINUTES } from './_lib/businessHours';
 
 const querySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date (YYYY-MM-DD)'),
@@ -28,13 +21,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const { date, service_id, stylist_id } = parsed.data;
 
-  const dayOfWeek = new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
-    weekday: 'long',
-    timeZone: process.env.SALON_TIMEZONE ?? 'America/New_York',
-  });
+  // Temporal gates mirror validateBookingWindow in _lib/businessHours, so the
+  // grid never advertises a slot POST /api/appointments would reject.
+  const today = salonToday();
+  if (date < today) {
+    return res.json({ slots: [], message: 'That date has already passed' });
+  }
+  if (date > addDays(today, BOOKING_HORIZON_DAYS)) {
+    return res.json({
+      slots: [],
+      message: `Bookings open up to ${BOOKING_HORIZON_DAYS} days ahead`,
+    });
+  }
 
-  const hours = BUSINESS_HOURS[dayOfWeek];
+  const hours = hoursForDate(date);
   if (!hours) return res.json({ slots: [], message: 'Salon is closed on this day' });
+
+  // Slots that have already started today are not offerable. Undefined for any
+  // future date, where the whole grid from opening time is still live.
+  const minStartMinutes = date === today ? salonNowMinutes() + MIN_LEAD_MINUTES : undefined;
 
   const { data: service } = await supabaseAdmin
     .from('services')
@@ -60,7 +65,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const slotMap = new Map<string, string[]>();
 
     for (const sid of stylistIds) {
-      const slots = await getSlotsForStylist(sid, date, hours, service.duration_min);
+      const slots = await getSlotsForStylist(sid, date, hours, service.duration_min, minStartMinutes);
+      // A query we could not run is not evidence of a free stylist. Failing
+      // open here published the full 10:00-20:00 grid during a DB outage and
+      // sent every one of those customers into a terminal 409 at booking time.
+      if (slots === null) {
+        return res.status(503).json({ error: 'Could not load availability. Please try again.' });
+      }
       for (const slot of slots) {
         const existing = slotMap.get(slot) ?? [];
         existing.push(sid);
@@ -74,17 +85,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.json({ slots: result });
   } else {
-    const slots = await getSlotsForStylist(stylistIds[0], date, hours, service.duration_min);
+    const slots = await getSlotsForStylist(stylistIds[0], date, hours, service.duration_min, minStartMinutes);
+    if (slots === null) {
+      return res.status(503).json({ error: 'Could not load availability. Please try again.' });
+    }
     return res.json({ slots: slots.map((time) => ({ time, availableStylistIds: [stylistIds[0]] })) });
   }
 }
 
+/** Returns null when a conflict query failed — the caller must fail closed. */
 async function getSlotsForStylist(
   stylistId: string,
   date: string,
   hours: { open: string; close: string },
-  durationMin: number
-): Promise<string[]> {
+  durationMin: number,
+  minStartMinutes: number | undefined
+): Promise<string[] | null> {
   const [appointments, blocked] = await Promise.all([
     supabaseAdmin
       .from('appointments')
@@ -99,11 +115,22 @@ async function getSlotsForStylist(
       .eq('blocked_date', date),
   ]);
 
+  const queryError = appointments.error ?? blocked.error;
+  if (queryError) {
+    await captureError(queryError, {
+      fingerprint: 'api:availability:conflict-query',
+      tags: { endpoint: 'GET /api/availability' },
+      extra: { stylistId, date, durationMin },
+    });
+    return null;
+  }
+
   return generateAvailableSlots({
     openTime: hours.open,
     closeTime: hours.close,
     slotDuration: durationMin,
     existingAppointments: appointments.data ?? [],
     blockedSlots: blocked.data ?? [],
+    minStartMinutes,
   });
 }

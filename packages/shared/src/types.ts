@@ -1,4 +1,4 @@
-export type ServiceCategory = 'hair' | 'threading' | 'facial' | 'waxing' | 'special_treatment' | 'male';
+export type ServiceCategory = 'hair' | 'threading' | 'facial' | 'waxing' | 'special_treatment';
 
 export type AppointmentStatus =
   | 'pending'
@@ -44,6 +44,9 @@ export interface Appointment {
   status: AppointmentStatus;
   cancellation_token: string;
   reminder_sent: boolean;
+  followup_sent: boolean;
+  /** Opted in to promotional email at booking time. See migration 015. */
+  marketing_consent: boolean;
   created_at: string;
 }
 
@@ -76,6 +79,8 @@ export interface CreateAppointmentPayload {
   appointment_date: string; // YYYY-MM-DD
   appointment_time: string; // HH:MM
   notes?: string;
+  /** Optional opt-in checkbox. Omitted is treated as "no" server-side. */
+  marketing_consent?: boolean;
 }
 
 export interface CreateAppointmentResponse {
