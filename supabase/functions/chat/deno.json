@@ -1,0 +1,12 @@
+{
+  "//": "Exact versions, never ranges. A supply-chain compromise of a transitive dependency reaches an LLM's context and our Supabase service-role key (OWASP LLM03), so the deploy must be reproducible. Bump these deliberately, never automatically.",
+  "imports": {
+    "@anthropic-ai/sdk": "npm:@anthropic-ai/sdk@0.115.0",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.101.1",
+    "@upstash/ratelimit": "npm:@upstash/ratelimit@2.0.8",
+    "@upstash/redis": "npm:@upstash/redis@1.38.0",
+    "zod": "npm:zod@3.25.76",
+    "@std/assert": "jsr:@std/assert@1.0.19"
+  },
+  "//deploy": "@std/assert is test-only. index.ts never imports it, and Supabase bundles from the entrypoint, so it does not ship."
+}

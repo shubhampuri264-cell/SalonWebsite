@@ -13,6 +13,54 @@ import { envValue } from './env';
 
 let initialized = false;
 
+/**
+ * Keys whose values are customer PII and must never leave the process, no
+ * matter which layer attached them. Matched case-insensitively against the
+ * whole key, so `client_email`, `clientEmail` and `email` are all caught.
+ */
+const PII_KEY_PATTERN =
+  /(email|phone|client_name|customer|full_name|password|token|authorization|cookie|address)/i;
+
+const REDACTED = '[redacted]';
+
+/**
+ * Strip anything that could carry personal data before an event is sent.
+ *
+ * `sendDefaultPii: false` already stops the SDK attaching bodies and headers on
+ * its own, but it does not police what *our* code passes as `extra` — and the
+ * natural thing for a caller to do when a booking fails is attach the booking.
+ * This makes that safe by construction rather than by reviewer vigilance.
+ */
+function scrubEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent {
+  if (event.request) {
+    // Bodies and cookies never carry useful debugging signal here; the URL and
+    // method do, so those stay.
+    delete event.request.data;
+    delete event.request.cookies;
+    delete event.request.headers;
+    // Query strings can carry a cancellation token or an email.
+    delete event.request.query_string;
+  }
+
+  const scrub = (bag: Record<string, unknown> | undefined) => {
+    if (!bag) return;
+    for (const key of Object.keys(bag)) {
+      if (PII_KEY_PATTERN.test(key)) bag[key] = REDACTED;
+    }
+  };
+
+  scrub(event.extra);
+  scrub(event.tags as Record<string, unknown> | undefined);
+
+  // `user` is only ever set from an auth context; keep the id for correlation
+  // and drop the rest.
+  if (event.user) {
+    event.user = event.user.id ? { id: event.user.id } : {};
+  }
+
+  return event;
+}
+
 function initSentry(): boolean {
   if (initialized) return true;
   const dsn = envValue('SENTRY_DSN');
@@ -28,6 +76,13 @@ function initSentry(): boolean {
     // Defaults to true; explicit so anyone reading this knows we rely on it
     // for unhandled rejection capture in the handler wrappers below.
     enabled: true,
+    // Explicit even though it is the SDK default: every request body reaching
+    // these functions carries customer PII (name, email, phone on
+    // /api/appointments; message text on /api/contact). Flipping this on would
+    // ship that to a third party, and inadvertent PII in logs is itself
+    // treated as a reportable breach under NY's SHIELD Act.
+    sendDefaultPii: false,
+    beforeSend: scrubEvent,
   });
 
   initialized = true;

@@ -1,0 +1,23 @@
+# Supabase CLI project config.
+#
+# Present so `supabase functions deploy chat` knows which project it is talking
+# to. This repo does NOT use the local Supabase stack — the database is managed
+# through the SQL Editor and the files in supabase/migrations — so only the
+# project id and the function declarations matter here.
+
+project_id = "anysbhiiwsnuzksrlvtf"
+
+[functions.chat]
+# The chat widget is on public pages, so most callers are anonymous visitors
+# with no Supabase JWT at all. Gateway-level JWT verification would reject them
+# before the function runs.
+#
+# This is NOT a hole: the function is a closed instruction set. It has no
+# customer data of its own, it never trusts anything the caller sends about who
+# they are, and every action that reads or mutates an appointment is proxied to
+# the Vercel API, which independently verifies that customer's own token. The
+# customer token travels in X-Customer-Token and is validated there.
+#
+# Abuse is bounded by the six rate limiters in supabase/functions/chat/ratelimit.ts
+# rather than by authentication, because there is no account to authenticate.
+verify_jwt = false

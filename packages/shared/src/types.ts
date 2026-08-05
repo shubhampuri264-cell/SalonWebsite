@@ -50,6 +50,23 @@ export interface Appointment {
   created_at: string;
 }
 
+/** Owner-managed offer. See migration 017. */
+export interface Promotion {
+  id: string;
+  title: string;
+  description: string | null;
+  /**
+   * Shown to customers exactly as written and quoted verbatim by the assistant
+   * — never parsed into a number and never paraphrased.
+   */
+  offer_text: string;
+  starts_on: string;         // YYYY-MM-DD
+  ends_on: string | null;    // YYYY-MM-DD, null = open-ended
+  /** Manual override. Live requires this AND today inside [starts_on, ends_on]. */
+  is_active: boolean;
+  created_at: string;
+}
+
 export interface BlockedSlot {
   id: string;
   stylist_id: string;

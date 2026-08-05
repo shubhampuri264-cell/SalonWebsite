@@ -14,6 +14,10 @@ regression that can't be patched with another forward migration in time.
 Down-migrations revert **schema**, not **data**. Anything the forward migration
 deleted/transformed is gone. Specifically:
 
+- **017.down**: destroys every promotion the owner has written — wording, dates
+  and history. To merely stop offers showing, run
+  `UPDATE public.promotions SET is_active = FALSE;` instead; it has the same
+  customer-visible effect and loses nothing.
 - **014.down**: restores the migration-008 function body verbatim. If a
   migration above 014 also replaced `book_appointment`, running this reverts
   that too — check for later definitions first.

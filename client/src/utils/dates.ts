@@ -19,6 +19,26 @@ export function formatTime(time: string): string {
   return `${hour}:${String(m).padStart(2, '0')} ${period}`;
 }
 
+/**
+ * Today's date in the salon's timezone as YYYY-MM-DD.
+ *
+ * The browser's clock may be anywhere; what counts is what day it is at the
+ * salon. `en-CA` is the locale whose short date format IS ISO, so no manual
+ * padding or reassembly is needed.
+ *
+ * This is a DISPLAY helper. The authoritative "is this live right now" decision
+ * is made server-side (api/_lib/dates.ts salonToday) — never trust a client
+ * clock for anything that gates data.
+ */
+export function salonToday(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
+}
+
 /** Check if the salon is open on a given JS Date */
 export function isSalonOpen(date: Date): boolean {
   const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });

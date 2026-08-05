@@ -4,6 +4,26 @@
 
 import type { Resend } from 'resend';
 import { unquote } from './env';
+import { recordEmailSend } from './quota';
+
+/**
+ * Every kind of mail this app sends. All nine share Resend's 100/day free tier,
+ * which is why sends are counted (see ./quota).
+ *
+ * Deliberately a closed union rather than a free string: the value is logged,
+ * and two of the subjects below interpolate a customer's name
+ * (`New Booking: ${client_name}`, `Website enquiry from ${msg.name}`). Logging
+ * the subject would put PII into the function logs; logging this cannot.
+ */
+export type EmailKind =
+  | 'booking_confirmation'
+  | 'owner_notification'
+  | 'reminder'
+  | 'followup'
+  | 'cancellation'
+  | 'reschedule'
+  | 'contact'
+  | 'password_reset';
 
 export interface AppointmentEmailData {
   id: string;
@@ -122,6 +142,7 @@ function buildOwnerHtml(
 
 async function sendOne(
   resend: Resend,
+  kind: EmailKind,
   to: string,
   subject: string,
   html: string,
@@ -143,6 +164,10 @@ async function sendOne(
   // Log the message ID so the Vercel function log proves delivery was accepted
   // by Resend (separate from whether the inbox actually receives it).
   console.log(`[Email] sent id=${data?.id ?? '?'} to=${actualRecipient}${devOverride ? ` (override, original=${to})` : ''}`);
+
+  // Counted after a successful send, so the number tracks quota actually spent
+  // rather than attempts. Never throws — see ./quota.
+  await recordEmailSend(kind);
 }
 
 export async function sendBookingConfirmationEmail(
@@ -156,7 +181,7 @@ export async function sendBookingConfirmationEmail(
   const cancelUrl = `${clientUrl}/booking/cancel?token=${appointment.cancellation_token}`;
   const dateTimeStr = formatDateTime(appointment.appointment_date, appointment.appointment_time);
   const html = buildCustomerHtml(appointment, serviceName, stylistName, cancelUrl, dateTimeStr);
-  await sendOne(resend, appointment.client_email, 'Your Icon Studio Appointment is Confirmed!', html);
+  await sendOne(resend, 'booking_confirmation', appointment.client_email, 'Your Icon Studio Appointment is Confirmed!', html);
 }
 
 function buildPasswordResetHtml(actionLink: string): string {
@@ -189,7 +214,7 @@ export async function sendPasswordResetEmail(toEmail: string, actionLink: string
   const resend = await getResend();
   if (!resend) return;
   const html = buildPasswordResetHtml(actionLink);
-  await sendOne(resend, toEmail, 'Reset your Icon Studio password', html);
+  await sendOne(resend, 'password_reset', toEmail, 'Reset your Icon Studio password', html);
 }
 
 export async function sendOwnerNotificationEmail(
@@ -205,6 +230,7 @@ export async function sendOwnerNotificationEmail(
   const html = buildOwnerHtml(appointment, serviceName, stylistName, dateTimeStr);
   await sendOne(
     resend,
+    'owner_notification',
     ownerEmail,
     safeSubject(`New Booking: ${appointment.client_name} — ${dateTimeStr}`),
     html,
@@ -253,7 +279,7 @@ export async function sendReminderEmail(
   if (!resend) return;
   const dateTimeStr = formatDateTime(appointment.appointment_date, appointment.appointment_time);
   const html = buildReminderHtml(appointment, serviceName, stylistName, dateTimeStr);
-  await sendOne(resend, appointment.client_email, 'Reminder: Your Icon Studio Appointment is Tomorrow', html);
+  await sendOne(resend, 'reminder', appointment.client_email, 'Reminder: Your Icon Studio Appointment is Tomorrow', html);
 }
 
 /**
@@ -342,7 +368,88 @@ export async function sendFollowUpEmail(
     reviewUrl,
     `${clientUrl}/book`,
   );
-  await sendOne(resend, appointment.client_email, 'How was your visit to Icon Studio?', html);
+  await sendOne(resend, 'followup', appointment.client_email, 'How was your visit to Icon Studio?', html);
+}
+
+function buildRescheduleHtml(
+  appointment: AppointmentEmailData,
+  serviceName: string,
+  stylistName: string,
+  previousDateTimeStr: string,
+  newDateTimeStr: string,
+  cancelUrl: string,
+): string {
+  return `
+    <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #333;">
+      <h1 style="color: #C9757A;">Icon Studio</h1>
+      <h2>Your Appointment Has Moved</h2>
+      <p>Hi ${escapeHtml(appointment.client_name)},</p>
+      <p>
+        Your <strong>${escapeHtml(serviceName)}</strong> with
+        ${escapeHtml(stylistName)} has been rescheduled. Here are the new details:
+      </p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <tr>
+          <td style="padding: 8px; font-weight: bold;">Was:</td>
+          <td style="padding: 8px; color: #888; text-decoration: line-through;">${escapeHtml(previousDateTimeStr)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; font-weight: bold;">Now:</td>
+          <td style="padding: 8px; font-size: 17px;"><strong>${escapeHtml(newDateTimeStr)}</strong></td>
+        </tr>
+      </table>
+      <p>
+        There is nothing further you need to do — your original time has been
+        released and this new one is confirmed.
+      </p>
+      <p style="color: #666; font-size: 14px;">
+        Need to change it again or cancel?
+        <a href="${escapeHtml(cancelUrl)}" style="color: #C9757A;">Cancel this appointment</a>
+        or call us on (718) 255-6940.
+      </p>
+      <p style="color: #888; font-size: 12px; margin-top: 32px;">
+        Icon Studio · 39-46 Queens Blvd, Sunnyside, NY 11104 · (718) 255-6940
+      </p>
+    </div>
+  `;
+}
+
+/**
+ * Sent when an appointment is moved, by PATCH /api/appointments.
+ *
+ * Deliberately ONE email rather than a cancellation plus a fresh confirmation.
+ * A reschedule is implemented internally as cancel-then-rebook, and firing both
+ * of those templates would tell the customer their appointment was cancelled
+ * and then separately that they had booked something — which reads as a
+ * double-booking or a mistake, and generates exactly the phone call the
+ * feature was meant to avoid. It also halves the Resend quota each move costs.
+ */
+export async function sendRescheduleEmail(
+  appointment: AppointmentEmailData,
+  serviceName: string,
+  stylistName: string,
+  previousDate: string,
+  previousTime: string,
+): Promise<void> {
+  const resend = await getResend();
+  if (!resend) return;
+  const clientUrl = unquote(process.env.CLIENT_URL) ?? '';
+  const cancelUrl = `${clientUrl}/booking/cancel?token=${appointment.cancellation_token}`;
+  const html = buildRescheduleHtml(
+    appointment,
+    serviceName,
+    stylistName,
+    formatDateTime(previousDate, previousTime),
+    formatDateTime(appointment.appointment_date, appointment.appointment_time),
+    cancelUrl,
+  );
+  await sendOne(
+    resend,
+    'reschedule',
+    appointment.client_email,
+    'Your Icon Studio Appointment Has Moved',
+    html,
+  );
 }
 
 function buildCancellationHtml(
@@ -397,6 +504,7 @@ export async function sendCancellationEmail(
   const html = buildCancellationHtml(appointment, serviceName, dateTimeStr, `${clientUrl}/book`);
   await sendOne(
     resend,
+    'cancellation',
     appointment.client_email,
     'Your Icon Studio Appointment Has Been Cancelled',
     html,
@@ -454,6 +562,7 @@ export async function sendContactMessageEmail(msg: ContactMessage): Promise<bool
   if (!resend) return false;
   await sendOne(
     resend,
+    'contact',
     ownerEmail,
     safeSubject(`Website enquiry from ${msg.name}`),
     buildContactHtml(msg),

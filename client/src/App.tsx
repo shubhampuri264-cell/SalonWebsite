@@ -27,6 +27,12 @@ const ResetPassword = lazyWithReload(() => import('@/pages/ResetPassword'));
 const AdminLogin = lazyWithReload(() => import('@/pages/admin/AdminLogin'));
 const AdminDashboard = lazyWithReload(() => import('@/pages/admin/AdminDashboard'));
 
+// Iris, the chat assistant. Mounted only inside the public branch below, so
+// /admin/* excludes it structurally rather than via a path check that could
+// drift as routes are added. Renders null unless VITE_CHAT_URL and
+// VITE_CHAT_ENABLED are both set — see api/chat.ts.
+const ChatWidget = lazyWithReload(() => import('@/components/chat/ChatWidget'));
+
 function PageLoader() {
   return (
     <div className="flex h-64 items-center justify-center">
@@ -145,6 +151,12 @@ export default function App() {
                 </Suspense>
               </main>
               <Footer />
+              {/* Its OWN Suspense with a null fallback. Putting it inside the
+                  page-level one above would blank the whole page while the
+                  widget chunk loads. */}
+              <Suspense fallback={null}>
+                <ChatWidget />
+              </Suspense>
             </>
           }
         />

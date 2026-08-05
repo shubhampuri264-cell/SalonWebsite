@@ -3,9 +3,12 @@ import { Redis } from '@upstash/redis';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { envValue } from './env';
 
-type LimiterKey =
+export type LimiterKey =
   | 'booking'
+  | 'bookingPerEmail'
+  | 'bookingPerPhone'
   | 'cancel'
+  | 'reschedule'
   | 'contact'
   | 'contactGlobal'
   | 'admin'
@@ -17,7 +20,10 @@ type LimiterKey =
 
 interface LimiterSet {
   booking: Ratelimit;
+  bookingPerEmail: Ratelimit;
+  bookingPerPhone: Ratelimit;
   cancel: Ratelimit;
+  reschedule: Ratelimit;
   contact: Ratelimit;
   contactGlobal: Ratelimit;
   admin: Ratelimit;
@@ -57,6 +63,33 @@ function getLimiters(): LimiterSet | null {
       prefix: 'rl:book',
       analytics: false,
     }),
+    // Per-customer daily booking caps, keyed on the contact details rather than
+    // the IP. The `booking` limiter above bounds one network location; these
+    // bound one *person*, which is what actually protects the calendar from
+    // bulk fake bookings and the Resend quota from being drained by a script
+    // rotating through IPs.
+    //
+    // 3/day is far above any real customer — a family booking four
+    // appointments in one sitting is the only legitimate case, and they get a
+    // 429 that names the salon's phone number rather than a bare refusal.
+    //
+    // Enforced inside createAppointment() (see _lib/booking.ts), NOT in a
+    // route handler. Putting it in one entry point would leave the other open:
+    // /api/appointments is public and unauthenticated, so a cap that only
+    // guarded the chat assistant could be sidestepped by posting directly to
+    // the same endpoint the booking wizard already uses.
+    bookingPerEmail: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(3, '1 d'),
+      prefix: 'rl:book:email',
+      analytics: false,
+    }),
+    bookingPerPhone: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(3, '1 d'),
+      prefix: 'rl:book:phone',
+      analytics: false,
+    }),
     // Cancellations now send an email, so this endpoint spends Resend quota.
     // 20/hour per IP is far above any real customer (one click from an email
     // link) while bounding what a script pointed at the endpoint can burn.
@@ -64,6 +97,16 @@ function getLimiters(): LimiterSet | null {
       redis,
       limiter: Ratelimit.slidingWindow(20, '1 h'),
       prefix: 'rl:cancel',
+      analytics: false,
+    }),
+    // Moving an appointment sends an email, so it spends Resend quota. Also
+    // bounds slot-thrashing: repeatedly moving a booking around the calendar
+    // makes other customers' availability flicker. 5/hour is far above any real
+    // customer, who moves an appointment once.
+    reschedule: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(5, '1 h'),
+      prefix: 'rl:resched',
       analytics: false,
     }),
     // Contact form — public, unauthenticated, and it sends mail, so it is the
@@ -162,6 +205,57 @@ export async function checkRateLimit(
     console.error('[ratelimit] Upstash call failed:', err);
     return !IS_PRODUCTION;
   }
+}
+
+/**
+ * Check a limit for an identifier that is not a request — an email address, a
+ * phone number, a session id.
+ *
+ * Exists because `checkRateLimit`/`enforceRateLimit` both take a VercelRequest,
+ * and the callers that need per-customer caps live in shared library code
+ * (createAppointment) that is deliberately HTTP-agnostic so both the booking
+ * wizard and the chat assistant can reach it.
+ *
+ * Same fail-closed-in-production semantics as checkRateLimit: an unavailable
+ * limiter must not silently become "unlimited" in prod.
+ */
+export async function checkIdentifierLimit(
+  limiter: LimiterKey,
+  identifier: string,
+): Promise<boolean> {
+  const limiters = getLimiters();
+  if (!limiters) {
+    if (IS_PRODUCTION) {
+      console.error(
+        `[ratelimit] Upstash env vars missing in production — failing closed on ${limiter}`,
+      );
+      return false;
+    }
+    return true;
+  }
+
+  try {
+    const { success } = await limiters[limiter].limit(identifier);
+    return success;
+  } catch (err) {
+    console.error(`[ratelimit] Upstash call failed for ${limiter}:`, err);
+    return !IS_PRODUCTION;
+  }
+}
+
+/**
+ * Normalises a contact detail into a stable rate-limit key.
+ *
+ * Without this the caps are trivially defeated: "Jane@Example.com " and
+ * "jane@example.com" hash to different buckets, as do "(718) 255-6940" and
+ * "7182556940".
+ */
+export function limitKeyForEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+export function limitKeyForPhone(phone: string): string {
+  return phone.replace(/\D/g, '');
 }
 
 function clientIp(req: VercelRequest): string {

@@ -9,20 +9,34 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev -w client\" \"npm run dev -w server\"",
+    "dev:api": "npx --yes vercel dev --listen 3000",
+    "dev:full": "concurrently \"npm run dev -w client\" \"npm run dev:api\"",
     "build": "npm run build -w client && npm run build -w server",
     "lint": "npm run lint -w client && npm run lint -w server",
     "typecheck": "npm run typecheck -w client && npm run typecheck -w server && npm run typecheck:api",
-    "typecheck:api": "tsc -p tsconfig.api.json"
+    "typecheck:api": "tsc -p tsconfig.api.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:edge": "deno test --config supabase/functions/chat/deno.json --allow-env supabase/functions/chat/",
+    "test:all": "npm run test && npm run test:edge",
+    "check:edge": "deno check --config supabase/functions/chat/deno.json supabase/functions/chat/index.ts && deno lint --config supabase/functions/chat/deno.json supabase/functions/chat/",
+    "eval": "deno run --allow-net --allow-env --allow-read --config supabase/functions/chat/deno.json evals/run.ts",
+    "deploy:chat": "supabase functions deploy chat --project-ref anysbhiiwsnuzksrlvtf",
+    "migrate:status": "node scripts/migrate-status.mjs"
   },
   "devDependencies": {
     "@vercel/node": "^5.6.24",
     "concurrently": "^8.2.2",
-    "puppeteer": "^24.41.0"
+    "puppeteer": "^24.41.0",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
     "@sentry/node": "^10.54.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "sharp": "^0.34.5"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.60.1"
   }
 }

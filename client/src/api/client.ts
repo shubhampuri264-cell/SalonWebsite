@@ -3,13 +3,28 @@
 // intentional: a hardcoded prod URL (e.g. https://iconht.studio) bakes into the
 // bundle at build time and breaks any time the page is served from a different
 // domain (preview deploys, alternate vanity domains, etc.).
-// VITE_API_BASE_URL is honored only in dev for pointing the Vite dev server at
-// a separately-running Express backend.
-const configuredBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+// VITE_API_BASE_URL is honored only in dev, for pointing the Vite dev server at
+// a separately-running backend.
+//
+// It MUST be an absolute origin (http://host:port). A relative value such as
+// "/api" would be prefixed onto paths that already begin with /api, producing
+// "/api/api/services" — a 404 that looks like a broken endpoint rather than a
+// broken config. Anything non-absolute is therefore ignored rather than
+// silently concatenated. The normal dev setup needs no value at all: Vite
+// proxies /api to `vercel dev` (see vite.config.ts), so relative paths work
+// exactly as they do in production.
+const rawBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+const configuredBaseUrl =
+  rawBaseUrl && /^https?:\/\//i.test(rawBaseUrl) ? rawBaseUrl.replace(/\/+$/, '') : '';
 
-const BASE_URL = import.meta.env.DEV
-  ? (configuredBaseUrl || 'http://localhost:3001')
-  : '';
+if (import.meta.env.DEV && rawBaseUrl && !configuredBaseUrl) {
+  console.warn(
+    `[api] Ignoring VITE_API_BASE_URL="${rawBaseUrl}" — it must be an absolute ` +
+      'origin like http://localhost:3000. Using same-origin requests instead.'
+  );
+}
+
+const BASE_URL = import.meta.env.DEV ? configuredBaseUrl : '';
 
 export class ApiError extends Error {
   constructor(

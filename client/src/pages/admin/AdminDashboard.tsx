@@ -1,18 +1,20 @@
 import { useEffect } from 'react';
 import { useNavigate, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calendar, Ban, LogOut, Scissors } from 'lucide-react';
+import { LayoutDashboard, Calendar, Ban, LogOut, Scissors, BadgePercent } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { isOwner } from '@/utils/isOwner';
 import AdminAppointments from './AdminAppointments';
 import AdminBlockSlots from './AdminBlockSlots';
 import AdminOverview from './AdminOverview';
 import AdminServices from './AdminServices';
+import AdminPromotions from './AdminPromotions';
 import { cn } from '@/utils/cn';
 
 const NAV_ITEMS = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/admin/appointments', icon: Calendar, label: 'Appointments' },
   { to: '/admin/services', icon: Scissors, label: 'Services' },
+  { to: '/admin/promotions', icon: BadgePercent, label: 'Promotions' },
   { to: '/admin/blocked-slots', icon: Ban, label: 'Block Slots' },
 ];
 
@@ -73,6 +75,7 @@ export default function AdminDashboard() {
           <Route path="dashboard" element={<AdminOverview />} />
           <Route path="appointments" element={<AdminAppointments />} />
           <Route path="services" element={<AdminServices />} />
+          <Route path="promotions" element={<AdminPromotions />} />
           <Route path="blocked-slots" element={<AdminBlockSlots />} />
           <Route path="*" element={<AdminOverview />} />
         </Routes>

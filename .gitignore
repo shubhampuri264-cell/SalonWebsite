@@ -76,4 +76,4 @@ coverage/
 /scripts/
 
 /graphify-out
-.claude/agents/
+.claude/agents/supabase/.temp/

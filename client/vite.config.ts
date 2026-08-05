@@ -13,6 +13,19 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // `vercel dev` serves the api/ functions on :3000. Proxying /api through
+    // Vite keeps the browser on a single origin in dev, which is what makes dev
+    // match production: there, client and API are the same Vercel project and
+    // every request is same-origin. Without this you either need CORS headers
+    // that production doesn't have, or an absolute API URL baked into the dev
+    // bundle — both of which mean dev exercises a different code path than
+    // prod. Point it elsewhere with VERCEL_DEV_ORIGIN if you change the port.
+    proxy: {
+      '/api': {
+        target: process.env.VERCEL_DEV_ORIGIN ?? 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     rollupOptions: {
