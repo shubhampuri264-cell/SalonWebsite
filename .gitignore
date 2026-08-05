@@ -76,4 +76,7 @@ coverage/
 /scripts/
 
 /graphify-out
-.claude/agents/supabase/.temp/
+.claude/agents/
+
+# Supabase CLI scratch (records which project the CLI is linked to)
+supabase/.temp/

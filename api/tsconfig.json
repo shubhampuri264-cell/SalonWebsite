@@ -1,0 +1,41 @@
+// Typecheck config for the Vercel serverless functions in api/.
+//
+// This file MUST sit here, next to the functions. The @vercel/node builder
+// discovers a tsconfig by walking up from each entrypoint, and if it finds
+// none it type-checks with compiler DEFAULTS -- which means `strict: false`.
+//
+// That is not a cosmetic difference. Zod's inference relies on strictNullChecks:
+// without it, `z.infer` degrades to all-properties-optional, and discriminated
+// unions stop narrowing on their tag. The result was a build log full of errors
+// that no local check could reproduce:
+//
+//   api/appointments.ts(73,42): error TS2345: Argument of type '{ user_id: string;
+//     stylist_id?: string; ... }' is not assignable to 'CreateAppointmentInput'.
+//   api/appointments.ts(79,20): error TS2339: Property 'code' does not exist on
+//     type 'CreateAppointmentResult'.
+//
+// The code was correct; the compiler options were not. An earlier version of
+// this config lived at the repo root as tsconfig.api.json, deliberately named so
+// Vercel would NOT find it. That reasoning was backwards -- Vercel type-checks
+// api/ either way, so the only choice is whether it does so with our options or
+// with defaults.
+//
+// `npm run typecheck:api` points here too, so CI and the deploy check the same
+// files under the same rules.
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    // The load-bearing line. See above.
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
+  },
+  "include": ["**/*.ts"]
+}

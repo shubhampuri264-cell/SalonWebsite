@@ -14,7 +14,7 @@
     "build": "npm run build -w client && npm run build -w server",
     "lint": "npm run lint -w client && npm run lint -w server",
     "typecheck": "npm run typecheck -w client && npm run typecheck -w server && npm run typecheck:api",
-    "typecheck:api": "tsc -p tsconfig.api.json",
+    "typecheck:api": "tsc -p api --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:edge": "deno test --config supabase/functions/chat/deno.json --allow-env supabase/functions/chat/",
