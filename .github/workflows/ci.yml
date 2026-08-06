@@ -33,6 +33,10 @@ jobs:
       # script, which fans out to all three tsconfigs.
       - run: npm run typecheck
 
+      # ESLint over client, server, api and shared. The Deno code has its own
+      # linter in the check:edge step below.
+      - run: npm run lint
+
       - run: npm run test
 
       # The Iris Edge Function is Deno, not Node, so it needs its own runtime

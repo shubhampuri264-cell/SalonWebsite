@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import jwt from 'jsonwebtoken';
 import { supabaseAdmin } from '../config/supabase';
-import { createBooking, resolveAnyoneStylist } from '../services/bookingService';
+import { createBooking } from '../services/bookingService';
 import {
   sendBookingConfirmation,
   sendSalonNotification,
@@ -32,7 +32,8 @@ function extractUserId(authHeader: string | undefined): string | null {
 export const appointmentsRouter = Router();
 
 const createSchema = z.object({
-  stylist_id: z.union([z.string().uuid(), z.literal('anyone')]),
+  // A concrete stylist, always — see migration 018 and api/_lib/eligibility.ts.
+  stylist_id: z.string().uuid(),
   service_id: z.string().uuid(),
   client_name: z.string().min(2).max(100),
   client_email: z.string().email(),
@@ -65,24 +66,40 @@ appointmentsRouter.post('/', bookingRateLimit, async (req, res, next) => {
       return;
     }
 
-    // Resolve 'anyone' to a specific stylist
-    let stylistId: string;
-    if (payload.stylist_id === 'anyone') {
-      stylistId = await resolveAnyoneStylist(
-        payload.appointment_date,
-        payload.appointment_time,
-        service.duration_min
-      );
-    } else {
-      stylistId = payload.stylist_id;
-    }
+    const stylistId = payload.stylist_id;
 
-    // Fetch stylist name for notifications
     const { data: stylist } = await supabaseAdmin
       .from('stylists')
       .select('name')
       .eq('id', stylistId)
-      .single();
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (!stylist) {
+      res.status(404).json({ error: 'Stylist not found' });
+      return;
+    }
+
+    // A stylist may only be booked for a service they perform. See migration 018.
+    // Fails closed: a lookup that errored is not evidence the pairing is allowed.
+    const { data: pairing, error: pairingError } = await supabaseAdmin
+      .from('stylist_services')
+      .select('stylist_id')
+      .eq('stylist_id', stylistId)
+      .eq('service_id', payload.service_id)
+      .maybeSingle();
+
+    if (pairingError) {
+      res.status(503).json({ error: 'Could not verify availability. Please try again.' });
+      return;
+    }
+    if (!pairing) {
+      res.status(400).json({
+        error: `${stylist.name} does not offer ${service.name}. Please pick a stylist who does.`,
+        code: 'STYLIST_SERVICE_MISMATCH',
+      });
+      return;
+    }
 
     const cancellationToken = generateCancellationToken();
     const userId = extractUserId(req.headers.authorization);

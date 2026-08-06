@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation, type NavLinkRenderProps } from 'react-router-dom';
 import { Menu, X, Scissors, User, ChevronDown } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useCustomerAuthStore } from '@/store/customerAuthStore';
@@ -50,7 +50,7 @@ export default function Navbar() {
       className={cn(
         'sticky top-0 z-50 w-full border-b transition-all duration-300',
         scrolled
-          ? 'border-gold-500/25 bg-background/85 shadow-sm backdrop-blur-md'
+          ? 'border-gold-500/25 bg-background/85 shadow-xs backdrop-blur-md'
           : 'border-transparent bg-background'
       )}
     >
@@ -70,7 +70,7 @@ export default function Navbar() {
             <NavLink
               key={to}
               to={to}
-              className={({ isActive }) =>
+              className={({ isActive }: NavLinkRenderProps) =>
                 cn(
                   'relative text-sm font-medium transition-colors hover:text-rose-700',
                   'after:absolute after:-bottom-1.5 after:left-0 after:h-px after:bg-gold-500 after:transition-all after:duration-300',
@@ -158,7 +158,7 @@ export default function Navbar() {
             <NavLink
               key={to}
               to={to}
-              className={({ isActive }) =>
+              className={({ isActive }: NavLinkRenderProps) =>
                 cn(
                   'border-b border-border py-4 text-base font-medium transition-colors hover:text-rose-600',
                   isActive ? 'text-rose-600' : 'text-foreground'

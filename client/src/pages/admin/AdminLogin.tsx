@@ -43,7 +43,7 @@ export default function AdminLogin() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-stone-50 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-white p-8 shadow-sm">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-white p-8 shadow-xs">
         <div className="mb-8 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-100">
             <Scissors className="h-6 w-6 text-rose-600" aria-hidden="true" />
@@ -83,7 +83,7 @@ export default function AdminLogin() {
               id="identifier"
               type="text"
               autoComplete="username"
-              className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+              className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
               aria-invalid={!!errors.identifier}
             />
             {errors.identifier && (
@@ -102,7 +102,7 @@ export default function AdminLogin() {
               id="password"
               type="password"
               autoComplete="current-password"
-              className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+              className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
               aria-invalid={!!errors.password}
             />
             {errors.password && (

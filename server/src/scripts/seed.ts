@@ -18,6 +18,10 @@ const supabase = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
+// `specialties` is display copy and gates nothing. Which services a stylist can
+// actually be booked for lives in the `stylist_services` join table, owned by
+// migration 018 — the same split as the service catalogue, which this script
+// also leaves alone. Editing the prose below changes nothing about bookability.
 const stylists = [
   {
     name: 'Sumita Karki',
@@ -32,7 +36,14 @@ const stylists = [
     name: 'Sazana Aryal',
     title: 'Threading & Facial Specialist',
     bio: 'Sazana is an expert in eyebrow threading, facial threading, and facial hair design. Her precise technique delivers clean, long-lasting results every time.',
-    specialties: ['Eyebrow Threading', 'Facial Threading', 'Upper Lip Threading', 'Full Face Threading'],
+    specialties: [
+      'Eyebrow Threading',
+      'Facial Threading',
+      'Waxing',
+      'Facials',
+      'Eyelash Extensions',
+      'Eyebrow Lamination',
+    ],
     years_exp: null,
     image_url: null,
     is_active: true,

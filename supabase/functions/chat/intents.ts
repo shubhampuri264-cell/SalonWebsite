@@ -120,7 +120,10 @@ export const contactSchema = z.object({
 export const INTENT_PARAMS = {
   pick_category: z.object({ category: z.enum(CATEGORIES) }),
   pick_service: z.object({ service_id: uuid }),
-  pick_stylist: z.object({ stylist_id: z.union([uuid, z.literal('anyone')]) }),
+  // A named stylist only. 'anyone' used to be accepted here and resolved at
+  // booking time by picking at random from whoever was free — including
+  // stylists who do not perform the service. See migration 018.
+  pick_stylist: z.object({ stylist_id: uuid }),
   pick_date: z.object({ date: z.string().regex(DATE_RE, 'Invalid date') }),
   pick_time: z.object({ time: z.string().regex(TIME_RE, 'Invalid time') }),
   submit_contact: contactSchema,

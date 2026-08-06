@@ -1,24 +1,19 @@
-import { useEffect, useState } from 'react';
 import StylistCard from '@/components/StylistCard';
-import { getStylists } from '@/api/stylists';
 import { useBookingStore } from '@/store/bookingStore';
-import { Users } from 'lucide-react';
-import { cn } from '@/utils/cn';
 import type { Stylist } from '@luxe/shared';
 
+/**
+ * Only ever rendered when two or more stylists perform the chosen service —
+ * StepService resolves the eligible list and skips straight to date/time when
+ * there is exactly one. There is deliberately no "anyone available" option: it
+ * assigned whoever was free regardless of whether they do the service.
+ */
 export default function StepStylist() {
-  const [stylists, setStylists] = useState<Stylist[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const { selectedStylist, setStylist, nextStep, prevStep } = useBookingStore();
+  const { eligibleStylists, selectedStylist, selectedService, setStylist, nextStep, prevStep } =
+    useBookingStore();
 
-  useEffect(() => {
-    getStylists()
-      .then(setStylists)
-      .catch((e) => setError(e.message));
-  }, []);
-
-  const handleSelect = (choice: Stylist | 'anyone') => {
-    setStylist(choice);
+  const handleSelect = (stylist: Stylist) => {
+    setStylist(stylist);
     nextStep();
   };
 
@@ -26,57 +21,25 @@ export default function StepStylist() {
     <div>
       <h2 className="font-serif text-2xl font-semibold">Choose a Stylist</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Select a preferred stylist, or let us assign whoever is available.
+        {selectedService
+          ? `These stylists offer ${selectedService.name}.`
+          : 'Select the stylist you would like to see.'}
       </p>
 
-      {error && (
-        <p className="mt-4 text-destructive text-sm">
-          Failed to load stylists. Please refresh.
+      {eligibleStylists.length === 0 && (
+        <p className="mt-4 text-sm text-muted-foreground">
+          Pick a service first and we'll show you who can do it.
         </p>
       )}
 
-      {!stylists && !error && (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {[1, 2].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
-          ))}
-        </div>
-      )}
-
-      {stylists && (
+      {eligibleStylists.length > 0 && (
         <div className="mt-6 space-y-3">
-          {/* Anyone available option */}
-          <button
-            className={cn(
-              'flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all hover:border-rose-400 hover:shadow-md',
-              selectedStylist === 'anyone'
-                ? 'border-rose-500 bg-rose-50 shadow-md'
-                : 'border-border bg-white'
-            )}
-            onClick={() => handleSelect('anyone')}
-            aria-pressed={selectedStylist === 'anyone'}
-          >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-rose-100">
-              <Users className="h-6 w-6 text-rose-600" aria-hidden="true" />
-            </div>
-            <div>
-              <p className="font-semibold">Anyone Available</p>
-              <p className="text-sm text-muted-foreground">
-                We'll assign you the first available stylist
-              </p>
-            </div>
-          </button>
-
-          {/* Individual stylists */}
-          {stylists.map((stylist) => (
+          {eligibleStylists.map((stylist) => (
             <StylistCard
               key={stylist.id}
               stylist={stylist}
               compact
-              selected={
-                typeof selectedStylist === 'object' &&
-                selectedStylist?.id === stylist.id
-              }
+              selected={selectedStylist?.id === stylist.id}
               onClick={() => handleSelect(stylist)}
             />
           ))}

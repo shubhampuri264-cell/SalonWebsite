@@ -61,13 +61,13 @@ export default function ChatPanel({ onClose }: ChatPanelProps) {
       aria-labelledby="iris-title"
       // z-40 is deliberate: BELOW Navbar's z-50 and the customer auth modal's
       // z-50, so Iris never covers the sticky nav or an open sign-in dialog.
-      // Mobile goes full-screen at z-[60] because there it IS the whole page.
+      // Mobile goes full-screen at z-60 because there it IS the whole page.
       // overflow-hidden is load-bearing, not tidiness. A category with twenty
       // services renders twenty chips, and a flex child does not shrink below
       // its content: without this the chip block grew straight out through the
       // bottom of the card, painting buttons over the page with no background
       // behind them. The chip row scrolls instead — see below.
-      className="card-lux fixed inset-0 z-[60] flex flex-col overflow-hidden rounded-none bg-background shadow-2xl sm:inset-auto sm:bottom-24 sm:right-5 sm:z-40 sm:h-[70vh] sm:max-h-[640px] sm:w-[380px] sm:rounded-2xl"
+      className="card-lux fixed inset-0 z-60 flex flex-col overflow-hidden rounded-none bg-background shadow-2xl sm:inset-auto sm:bottom-24 sm:right-5 sm:z-40 sm:h-[70vh] sm:max-h-[640px] sm:w-[380px] sm:rounded-2xl"
     >
       {/* Header */}
       <div className="flex items-center gap-2 border-b border-gold-200 px-4 py-3">

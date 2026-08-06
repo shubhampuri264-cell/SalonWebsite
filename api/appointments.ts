@@ -8,7 +8,10 @@ import { createAppointment, extractUserId, rescheduleAppointment } from './_lib/
 import { verifyInternalCaller } from './_lib/auth';
 
 const createSchema = z.object({
-  stylist_id: z.union([z.string().uuid(), z.literal('anyone')]),
+  // A concrete stylist, always. The old 'anyone' member let the server pick a
+  // stylist at random from whoever was free, with no regard for whether they
+  // perform the service — see migration 018.
+  stylist_id: z.string().uuid(),
   service_id: z.string().uuid(),
   client_name: z.string().min(2).max(100),
   client_email: z.string().email().max(254),
@@ -67,9 +70,10 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
 
   // Everything past the parse lives in _lib/booking.ts so the Iris chat
   // assistant creates appointments under the exact same rules — the is_active
-  // service filter, temporal validation, blocked_slots awareness, the random
-  // free-stylist pick and the awaited confirmation emails. This handler's only
-  // remaining job is transport: rate limit, parse, map the result onto HTTP.
+  // service filter, temporal validation, blocked_slots awareness, the
+  // stylist-performs-this-service check and the awaited confirmation emails.
+  // This handler's only remaining job is transport: rate limit, parse, map the
+  // result onto HTTP.
   const result = await createAppointment({
     ...parsed.data,
     user_id: await extractUserId(req.headers.authorization),
@@ -80,6 +84,10 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
       case 'SERVICE_NOT_FOUND':
       case 'STYLIST_NOT_FOUND':
         return res.status(404).json({ error: result.message });
+      case 'STYLIST_SERVICE_MISMATCH':
+        // 400, not 404: both rows exist, the pairing is what is wrong. Iris
+        // shows this message verbatim and re-offers the eligible stylists.
+        return res.status(400).json({ error: result.message, code: 'STYLIST_SERVICE_MISMATCH' });
       case 'WINDOW':
         return res.status(400).json({ error: result.message, code: result.windowCode });
       case 'SLOT_TAKEN':

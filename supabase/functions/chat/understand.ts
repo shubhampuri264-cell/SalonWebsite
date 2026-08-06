@@ -66,7 +66,8 @@ const PARAMS_SCHEMA = {
     },
     stylist_id: {
       type: 'string' as const,
-      description: 'A stylist id copied exactly from the list above, or the word "anyone".',
+      description:
+        'A stylist id copied exactly from the list above. Only ever a stylist whose services include the one being booked.',
     },
     date: { type: 'string' as const, description: 'A date as YYYY-MM-DD.' },
     time: { type: 'string' as const, description: 'A time as HH:MM in 24-hour form.' },

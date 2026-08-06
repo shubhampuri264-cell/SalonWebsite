@@ -2,7 +2,7 @@
 // /api/customer/resend-email. Centralized so the HTML templates and the
 // "fail loudly when Resend rejects" wrapper live in one place.
 
-import type { Resend } from 'resend';
+import { Resend } from 'resend';
 import { unquote } from './env';
 import { recordEmailSend } from './quota';
 
@@ -51,8 +51,7 @@ async function getResend(): Promise<Resend | null> {
     return null;
   }
   if (cachedResend) return cachedResend;
-  const { Resend: ResendCtor } = await import('resend');
-  cachedResend = new ResendCtor(key);
+  cachedResend = new Resend(key);
   return cachedResend;
 }
 

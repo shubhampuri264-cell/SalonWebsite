@@ -15,12 +15,14 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@luxe/shared": ["../packages/shared/src/index.ts"]
     }
   },
   "include": ["src"],
+  // Tests run under vitest in a Node context; keeping them out of the app
+  // project keeps Node ambients (process, __dirname) untyped in browser code.
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

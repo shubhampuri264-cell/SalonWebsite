@@ -36,7 +36,7 @@ export default function ContactForm({ mode, disabled, onSubmit }: ContactFormPro
   const [submitted, setSubmitted] = useState(false);
 
   const inputClass =
-    'w-full rounded-lg border border-input bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400 disabled:opacity-50';
+    'w-full rounded-lg border border-input bg-white px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 disabled:opacity-50';
 
   const submit = () => {
     // Mirrors the server bounds so a typo is caught here rather than as a 400

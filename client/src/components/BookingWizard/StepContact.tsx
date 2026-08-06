@@ -36,13 +36,8 @@ export default function StepContact() {
     },
   });
 
-  const stylistId =
-    typeof selectedStylist === 'object' && selectedStylist
-      ? selectedStylist.id
-      : 'anyone';
-
   const onSubmit = async (data: BookingContactValues) => {
-    if (!selectedService || !selectedDate || !selectedTime) return;
+    if (!selectedService || !selectedStylist || !selectedDate || !selectedTime) return;
 
     setSubmitError(null);
     setContactInfo({
@@ -56,7 +51,7 @@ export default function StepContact() {
       const result = await createAppointment(
         {
           service_id: selectedService.id,
-          stylist_id: stylistId,
+          stylist_id: selectedStylist.id,
           client_name: data.client_name,
           client_email: data.client_email,
           client_phone: data.client_phone,
@@ -104,12 +99,11 @@ export default function StepContact() {
             <li>
               <strong>Time:</strong> {formatTime(selectedTime)}
             </li>
-            <li>
-              <strong>Stylist:</strong>{' '}
-              {typeof selectedStylist === 'object' && selectedStylist
-                ? selectedStylist.name
-                : 'Anyone Available'}
-            </li>
+            {selectedStylist && (
+              <li>
+                <strong>Stylist:</strong> {selectedStylist.name}
+              </li>
+            )}
           </ul>
         </div>
       )}
@@ -129,7 +123,7 @@ export default function StepContact() {
               id="client_name"
               type="text"
               placeholder="Jane Smith"
-              className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+              className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
               aria-invalid={!!errors.client_name}
             />
             {errors.client_name && (
@@ -148,7 +142,7 @@ export default function StepContact() {
               id="client_phone"
               type="tel"
               placeholder="(718) 255-6940"
-              className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+              className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
               aria-invalid={!!errors.client_phone}
             />
             {errors.client_phone && (
@@ -168,7 +162,7 @@ export default function StepContact() {
             id="client_email"
             type="email"
             placeholder="jane@example.com"
-            className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+            className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
             aria-invalid={!!errors.client_email}
           />
           {errors.client_email && (
@@ -187,7 +181,7 @@ export default function StepContact() {
             id="notes"
             rows={3}
             placeholder="Any special requests or notes for your stylist..."
-            className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent resize-none"
+            className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent resize-none"
           />
         </div>
 

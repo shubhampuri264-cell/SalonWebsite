@@ -4,12 +4,17 @@ import { supabaseAdmin } from './_lib/supabase';
 import { generateAvailableSlots } from './_lib/timeSlots';
 import { captureError } from './_lib/sentry';
 import { salonToday, salonNowMinutes, addDays } from './_lib/dates';
+import { stylistPerformsService } from './_lib/eligibility';
 import { hoursForDate, BOOKING_HORIZON_DAYS, MIN_LEAD_MINUTES } from './_lib/businessHours';
 
 const querySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date (YYYY-MM-DD)'),
   service_id: z.string().uuid('Invalid service_id'),
-  stylist_id: z.union([z.string().uuid(), z.literal('anyone')]).optional(),
+  // Required. This endpoint used to accept 'anyone' (or nothing) and union the
+  // slots of the entire roster, which advertised the threading specialist's
+  // free time for a balayage and then let the booking land on her at random.
+  // A slot grid is only meaningful for one named stylist.
+  stylist_id: z.string().uuid('Invalid stylist_id'),
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -49,48 +54,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!service) return res.status(404).json({ error: 'Service not found' });
 
-  let stylistIds: string[];
+  const { data: stylist } = await supabaseAdmin
+    .from('stylists')
+    .select('id')
+    .eq('id', stylist_id)
+    .eq('is_active', true)
+    .maybeSingle();
 
-  if (stylist_id && stylist_id !== 'anyone') {
-    stylistIds = [stylist_id];
-  } else {
-    const { data: stylists } = await supabaseAdmin
-      .from('stylists')
-      .select('id')
-      .eq('is_active', true);
-    stylistIds = (stylists ?? []).map((s) => s.id);
+  if (!stylist) return res.status(404).json({ error: 'Stylist not found' });
+
+  // Checked here as well as at booking time so the grid never shows times for a
+  // pairing POST /api/appointments would refuse. See migration 018.
+  const performs = await stylistPerformsService(stylist.id, service_id);
+  if (performs === null) {
+    return res.status(503).json({ error: 'Could not load availability. Please try again.' });
+  }
+  if (!performs) {
+    return res.status(400).json({
+      error: 'That stylist does not offer this service',
+      code: 'STYLIST_SERVICE_MISMATCH',
+    });
   }
 
-  if (!stylist_id || stylist_id === 'anyone') {
-    const slotMap = new Map<string, string[]>();
-
-    for (const sid of stylistIds) {
-      const slots = await getSlotsForStylist(sid, date, hours, service.duration_min, minStartMinutes);
-      // A query we could not run is not evidence of a free stylist. Failing
-      // open here published the full 10:00-20:00 grid during a DB outage and
-      // sent every one of those customers into a terminal 409 at booking time.
-      if (slots === null) {
-        return res.status(503).json({ error: 'Could not load availability. Please try again.' });
-      }
-      for (const slot of slots) {
-        const existing = slotMap.get(slot) ?? [];
-        existing.push(sid);
-        slotMap.set(slot, existing);
-      }
-    }
-
-    const result = Array.from(slotMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([time, availableStylistIds]) => ({ time, availableStylistIds }));
-
-    return res.json({ slots: result });
-  } else {
-    const slots = await getSlotsForStylist(stylistIds[0], date, hours, service.duration_min, minStartMinutes);
-    if (slots === null) {
-      return res.status(503).json({ error: 'Could not load availability. Please try again.' });
-    }
-    return res.json({ slots: slots.map((time) => ({ time, availableStylistIds: [stylistIds[0]] })) });
+  const slots = await getSlotsForStylist(stylist.id, date, hours, service.duration_min, minStartMinutes);
+  // A query we could not run is not evidence of a free stylist. Failing open
+  // here published the full 10:00-20:00 grid during a DB outage and sent every
+  // one of those customers into a terminal 409 at booking time.
+  if (slots === null) {
+    return res.status(503).json({ error: 'Could not load availability. Please try again.' });
   }
+  return res.json({ slots: slots.map((time) => ({ time })) });
 }
 
 /** Returns null when a conflict query failed — the caller must fail closed. */

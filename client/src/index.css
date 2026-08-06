@@ -1,6 +1,236 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= --theme(--breakpoint-sm)) {
+    max-width: none;
+  }
+  @media (width >= 1400px) {
+    max-width: 1400px;
+  }
+}
+
+@theme {
+  --color-rose-50: #fdf2f3;
+  --color-rose-100: #fae0e1;
+  --color-rose-200: #f4bbbf;
+  --color-rose-300: #e9929a;
+  --color-rose-400: #dc6a74;
+  --color-rose-500: #c9757a;
+  --color-rose-600: #b05a60;
+  --color-rose-700: #8c4347;
+  --color-rose-800: #6b3236;
+  --color-rose-900: #4e2427;
+  --color-rose: #c9757a;
+
+  --color-gold-50: #fbf6e9;
+  --color-gold-100: #f5eac8;
+  --color-gold-200: #ead38a;
+  --color-gold-300: #d9b84d;
+  --color-gold-400: #c9a032;
+  --color-gold-500: #b8902a;
+  --color-gold-600: #9a7621;
+  --color-gold-700: #785c19;
+  --color-gold-800: #574213;
+  --color-gold-900: #3a2c0d;
+  --color-gold: #b8902a;
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --font-serif: Fraunces, Georgia, Cambria, 'Times New Roman', serif;
+  --font-sans: Inter, system-ui, sans-serif;
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-fade-in: fade-in 0.4s ease-out;
+  --animate-rise: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility eyebrow {
+  /* Gold small-caps label with a leading hairline — the signature accent */
+  @apply inline-flex items-center gap-3 text-xs font-medium uppercase text-gold-700;
+  letter-spacing: 0.22em;
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 2rem;
+    height: 1.5px;
+    background: var(--color-gold-500);
+  }
+}
+
+@utility eyebrow--center {
+  @apply justify-center;
+}
+
+@utility hairline {
+  /* Thin gold rule */
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-gold-500), transparent);
+}
+
+@utility btn-primary {
+  /* Buttons — clear primary / secondary hierarchy */
+  @apply inline-flex items-center justify-center gap-2 rounded-full bg-rose-500 px-8 py-3
+           text-base font-semibold text-white transition-all duration-200
+           hover:bg-rose-600 hover:-translate-y-0.5;
+  box-shadow: 0 10px 24px -10px rgba(201, 117, 122, 0.7);
+  &:hover {
+    box-shadow: 0 16px 30px -12px rgba(201, 117, 122, 0.75);
+  }
+}
+
+@utility btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 rounded-full border border-rose-200
+           px-8 py-3 text-base font-medium text-rose-700 transition-colors
+           hover:bg-rose-50;
+}
+
+@utility card-lux {
+  /* Elevated content card with gold detail + hover lift */
+  @apply rounded-2xl border bg-card transition-all duration-300;
+  border-color: color-mix(in srgb, var(--color-gold-500) 24%, transparent);
+}
+
+@utility card-lux--interactive {
+  &:hover {
+    @apply -translate-y-1.5;
+    border-color: color-mix(in srgb, var(--color-gold-500) 50%, transparent);
+    box-shadow: 0 24px 40px -22px rgba(78, 36, 39, 0.4);
+  }
+}
+
+@utility reveal {
+  /* Scroll reveal — toggled by <Reveal> */
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+  &.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility is-visible {
+  &.reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility masonry-grid {
+  /* Masonry column layout for gallery */
+  columns: 1;
+  column-gap: 1rem;
+  @media (min-width: 640px) {
+    columns: 2;
+  }
+  @media (min-width: 768px) {
+    columns: 3;
+  }
+  @media (min-width: 1024px) {
+    columns: 4;
+  }
+}
+
+@utility masonry-item {
+  break-inside: avoid;
+  margin-bottom: 1rem;
+}
 
 @layer base {
   :root {
@@ -41,94 +271,6 @@
     font-family: 'Fraunces', Georgia, serif;
     font-optical-sizing: auto;
     letter-spacing: -0.01em;
-  }
-}
-
-@layer components {
-  /* Gold small-caps label with a leading hairline — the signature accent */
-  .eyebrow {
-    @apply inline-flex items-center gap-3 text-xs font-medium uppercase text-gold-700;
-    letter-spacing: 0.22em;
-  }
-  .eyebrow::before {
-    content: "";
-    display: inline-block;
-    width: 2rem;
-    height: 1.5px;
-    background: theme('colors.gold.500');
-  }
-  .eyebrow--center {
-    @apply justify-center;
-  }
-
-  /* Thin gold rule */
-  .hairline {
-    height: 1px;
-    background: linear-gradient(90deg, theme('colors.gold.500'), transparent);
-  }
-
-  /* Buttons — clear primary / secondary hierarchy */
-  .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-rose-500 px-8 py-3
-           text-base font-semibold text-white transition-all duration-200
-           hover:bg-rose-600 hover:-translate-y-0.5;
-    box-shadow: 0 10px 24px -10px rgba(201, 117, 122, 0.7);
-  }
-  .btn-primary:hover {
-    box-shadow: 0 16px 30px -12px rgba(201, 117, 122, 0.75);
-  }
-  .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-rose-200
-           px-8 py-3 text-base font-medium text-rose-700 transition-colors
-           hover:bg-rose-50;
-  }
-
-  /* Elevated content card with gold detail + hover lift */
-  .card-lux {
-    @apply rounded-2xl border bg-card transition-all duration-300;
-    border-color: color-mix(in srgb, theme('colors.gold.500') 24%, transparent);
-  }
-  .card-lux--interactive:hover {
-    @apply -translate-y-1.5;
-    border-color: color-mix(in srgb, theme('colors.gold.500') 50%, transparent);
-    box-shadow: 0 24px 40px -22px rgba(78, 36, 39, 0.4);
-  }
-
-  /* Scroll reveal — toggled by <Reveal> */
-  .reveal {
-    opacity: 0;
-    transform: translateY(22px);
-    transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-    will-change: opacity, transform;
-  }
-  .reveal.is-visible {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-
-  /* Masonry column layout for gallery */
-  .masonry-grid {
-    columns: 1;
-    column-gap: 1rem;
-  }
-  @media (min-width: 640px) {
-    .masonry-grid { columns: 2; }
-  }
-  @media (min-width: 768px) {
-    .masonry-grid { columns: 3; }
-  }
-  @media (min-width: 1024px) {
-    .masonry-grid { columns: 4; }
-  }
-  .masonry-item {
-    break-inside: avoid;
-    margin-bottom: 1rem;
   }
 }
 

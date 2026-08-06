@@ -4,8 +4,8 @@
 // entry point (the Iris chat assistant) could not end up with a second,
 // subtly-different implementation. Every rule the booking wizard relies on —
 // the is_active service filter, temporal validation, blocked_slots awareness,
-// the random free-stylist pick, the exclusion-constraint mapping, and the
-// awaited confirmation emails — lives here exactly once.
+// the stylist-performs-this-service check, the exclusion-constraint mapping,
+// and the awaited confirmation emails — lives here exactly once.
 //
 // It is deliberately HTTP-agnostic: no VercelRequest, no VercelResponse, no
 // status codes. Callers map the returned discriminated union onto whatever
@@ -16,6 +16,7 @@ import crypto from 'crypto';
 import { supabaseAdmin } from './supabase';
 import { captureError } from './sentry';
 import { isSlotFree } from './timeSlots';
+import { stylistPerformsService } from './eligibility';
 import { validateBookingWindow, type BookingWindowErrorCode } from './businessHours';
 import { salonToday, salonNowMinutes } from './dates';
 import {
@@ -33,7 +34,7 @@ import {
 const SALON_PHONE = '(718) 255-6940';
 
 export interface CreateAppointmentInput {
-  stylist_id: string | 'anyone';
+  stylist_id: string;
   service_id: string;
   client_name: string;
   client_email: string;
@@ -68,7 +69,13 @@ export type CreateAppointmentResult =
     }
   | {
       ok: false;
-      code: 'SERVICE_NOT_FOUND' | 'STYLIST_NOT_FOUND' | 'SLOT_TAKEN' | 'RATE_LIMITED' | 'INTERNAL';
+      code:
+        | 'SERVICE_NOT_FOUND'
+        | 'STYLIST_NOT_FOUND'
+        | 'STYLIST_SERVICE_MISMATCH'
+        | 'SLOT_TAKEN'
+        | 'RATE_LIMITED'
+        | 'INTERNAL';
       message: string;
     }
   | {
@@ -132,13 +139,17 @@ export async function createAppointment(
     return { ok: false, code: 'WINDOW', windowCode: window.code, message: window.message };
   }
 
-  // Both branches resolve against active stylists only, then go through the
-  // same availability check. The explicit-stylist path used to skip both:
-  // it never verified the stylist still works here, and it leaned on the RPC,
-  // which only knows about appointment overlap — never about blocked_slots.
-  const stylistQuery = supabaseAdmin.from('stylists').select('id, name').eq('is_active', true);
-  const { data: activeStylists, error: stylistError } =
-    stylist_id === 'anyone' ? await stylistQuery : await stylistQuery.eq('id', stylist_id);
+  // Resolved against active stylists only, then put through the same
+  // availability check every other path uses. This lookup used to be skipped
+  // for an explicitly-named stylist: it never verified they still work here,
+  // and it leaned on the RPC, which only knows about appointment overlap —
+  // never about blocked_slots.
+  const { data: stylist, error: stylistError } = await supabaseAdmin
+    .from('stylists')
+    .select('id, name')
+    .eq('is_active', true)
+    .eq('id', stylist_id)
+    .maybeSingle();
 
   if (stylistError) {
     await captureError(stylistError, {
@@ -153,14 +164,33 @@ export async function createAppointment(
     };
   }
 
-  if (!activeStylists?.length) {
-    return stylist_id === 'anyone'
-      ? { ok: false, code: 'SLOT_TAKEN', message: 'No stylists available for this slot' }
-      : { ok: false, code: 'STYLIST_NOT_FOUND', message: 'Stylist not found' };
+  if (!stylist) {
+    return { ok: false, code: 'STYLIST_NOT_FOUND', message: 'Stylist not found' };
+  }
+
+  // The gate this whole file used to be missing. Service and stylist were
+  // looked up independently and never compared, so a threading specialist could
+  // be booked for a balayage — by a stale page, a crafted request, or the old
+  // "anyone available" resolver, which picked from the free roster at random.
+  // The UI and the chat assistant filter too, but neither is trusted here.
+  const performs = await stylistPerformsService(stylist.id, service_id);
+  if (performs === null) {
+    return {
+      ok: false,
+      code: 'INTERNAL',
+      message: 'Could not verify availability. Please try again.',
+    };
+  }
+  if (!performs) {
+    return {
+      ok: false,
+      code: 'STYLIST_SERVICE_MISMATCH',
+      message: `${stylist.name} does not offer ${service.name}. Please pick a stylist who does.`,
+    };
   }
 
   const freeStylistIds = await findFreeStylists(
-    activeStylists.map((s) => s.id),
+    [stylist.id],
     appointment_date,
     appointment_time,
     service.duration_min,
@@ -177,23 +207,12 @@ export async function createAppointment(
     return {
       ok: false,
       code: 'SLOT_TAKEN',
-      message:
-        stylist_id === 'anyone'
-          ? 'No stylists available for this slot'
-          : 'This time slot is no longer available',
+      message: 'This time slot is no longer available',
     };
   }
 
-  // Random rather than freeStylistIds[0]: two concurrent requests for the same
-  // slot used to deterministically pick the same stylist and race each other
-  // while other free stylists sat idle. Spreading the choice turns most of
-  // those races into two successful bookings instead of one 409. It narrows the
-  // race, it does not close it — the exclusion constraint from migration 016 is
-  // what actually makes a double-booking impossible.
-  const resolvedStylistId: string =
-    freeStylistIds[Math.floor(Math.random() * freeStylistIds.length)];
-  const stylistName =
-    activeStylists.find((s) => s.id === resolvedStylistId)?.name ?? 'Your stylist';
+  const resolvedStylistId: string = stylist.id;
+  const stylistName = stylist.name;
 
   // Per-customer caps, checked here rather than in a route handler so both the
   // booking wizard and the chat assistant are covered by one enforcement point.

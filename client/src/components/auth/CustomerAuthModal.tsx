@@ -87,7 +87,7 @@ export default function CustomerAuthModal({ onClose }: Props) {
               onClick={() => switchTab('signin')}
               className={cn(
                 'flex-1 rounded-full py-2 text-sm font-medium transition-colors',
-                tab === 'signin' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                tab === 'signin' ? 'bg-white shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'
               )}
             >
               Sign In
@@ -96,7 +96,7 @@ export default function CustomerAuthModal({ onClose }: Props) {
               onClick={() => switchTab('signup')}
               className={cn(
                 'flex-1 rounded-full py-2 text-sm font-medium transition-colors',
-                tab === 'signup' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                tab === 'signup' ? 'bg-white shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'
               )}
             >
               Create Account
@@ -143,7 +143,7 @@ export default function CustomerAuthModal({ onClose }: Props) {
                   required
                   autoComplete="email"
                   placeholder="you@example.com"
-                  className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+                  className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
                 />
               </div>
               <button
@@ -178,7 +178,7 @@ export default function CustomerAuthModal({ onClose }: Props) {
                 required
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+                className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
               />
             </div>
             <div>
@@ -193,7 +193,7 @@ export default function CustomerAuthModal({ onClose }: Props) {
                 required
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+                className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
               />
             </div>
             <button
@@ -250,7 +250,7 @@ export default function CustomerAuthModal({ onClose }: Props) {
                 onChange={(e) => setFullName(e.target.value)}
                 required
                 placeholder="Jane Smith"
-                className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+                className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
               />
             </div>
             <div>
@@ -265,7 +265,7 @@ export default function CustomerAuthModal({ onClose }: Props) {
                 required
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+                className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
               />
             </div>
             <div>
@@ -280,7 +280,7 @@ export default function CustomerAuthModal({ onClose }: Props) {
                 required
                 autoComplete="new-password"
                 placeholder="At least 6 characters"
-                className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+                className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
               />
             </div>
             <div>
@@ -295,7 +295,7 @@ export default function CustomerAuthModal({ onClose }: Props) {
                 required
                 autoComplete="new-password"
                 placeholder="••••••••"
-                className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+                className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
               />
               {confirmPassword && password !== confirmPassword && (
                 <p className="mt-1 text-xs text-destructive">Passwords do not match</p>

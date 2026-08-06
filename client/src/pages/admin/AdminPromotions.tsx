@@ -165,7 +165,7 @@ export default function AdminPromotions() {
   }
 
   const inputClass =
-    'w-full rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400';
+    'w-full rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400';
 
   return (
     <div>
@@ -301,7 +301,7 @@ export default function AdminPromotions() {
                           onChange={(e) => setEditState((v) => ({ ...v, title: e.target.value }))}
                           maxLength={120}
                           aria-label="Title"
-                          className="w-full rounded-lg border border-input px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                          className="w-full rounded-lg border border-input px-2 py-1 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
                         />
                         <input
                           value={editState.description}
@@ -309,7 +309,7 @@ export default function AdminPromotions() {
                           maxLength={500}
                           placeholder="Details"
                           aria-label="Details"
-                          className="mt-1 w-full rounded-lg border border-input px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-rose-400"
+                          className="mt-1 w-full rounded-lg border border-input px-2 py-1 text-xs outline-hidden focus:ring-2 focus:ring-rose-400"
                         />
                       </td>
                       <td className="px-4 py-2">
@@ -318,7 +318,7 @@ export default function AdminPromotions() {
                           onChange={(e) => setEditState((v) => ({ ...v, offer_text: e.target.value }))}
                           maxLength={200}
                           aria-label="Offer text"
-                          className="w-full rounded-lg border border-input px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                          className="w-full rounded-lg border border-input px-2 py-1 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
                         />
                       </td>
                       <td className="px-4 py-2">
@@ -328,14 +328,14 @@ export default function AdminPromotions() {
                             value={editState.starts_on}
                             onChange={(e) => setEditState((v) => ({ ...v, starts_on: e.target.value }))}
                             aria-label="Start date"
-                            className="rounded-lg border border-input px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-rose-400"
+                            className="rounded-lg border border-input px-2 py-1 text-xs outline-hidden focus:ring-2 focus:ring-rose-400"
                           />
                           <input
                             type="date"
                             value={editState.ends_on}
                             onChange={(e) => setEditState((v) => ({ ...v, ends_on: e.target.value }))}
                             aria-label="End date"
-                            className="rounded-lg border border-input px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-rose-400"
+                            className="rounded-lg border border-input px-2 py-1 text-xs outline-hidden focus:ring-2 focus:ring-rose-400"
                           />
                         </div>
                       </td>

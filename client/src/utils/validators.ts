@@ -17,10 +17,10 @@ export const bookingContactSchema = z.object({
     .string()
     .min(10, 'Please enter a valid phone number')
     .max(20)
-    .regex(/^[\d\s\-\+\(\)]+$/, 'Please enter a valid phone number'),
+    .regex(/^[\d\s\-+()]+$/, 'Please enter a valid phone number'),
   notes: z.string().max(500, 'Notes must be under 500 characters').optional(),
   terms: z.literal(true, {
-    errorMap: () => ({ message: 'You must accept the terms to continue' }),
+    error: 'You must accept the terms to continue',
   }),
   // Optional opt-in, unlike `terms`. z.literal(true) would make the box
   // mandatory, which is exactly what consent must not be.

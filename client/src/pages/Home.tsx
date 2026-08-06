@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from '@dr.pogodin/react-helmet';
 import { Scissors, Star, Clock, CalendarCheck, ArrowRight, MapPin } from 'lucide-react';
 import Reveal from '@/components/Reveal';
 import { SALON_INFO } from '@/utils/dates';
@@ -101,7 +101,7 @@ export default function Home() {
 
           {/* Storefront photo — treated to tame the signage + hide the map watermark */}
           <div className="animate-rise" style={{ animationDelay: '220ms' }}>
-            <div className="relative aspect-[4/5] overflow-hidden rounded-3xl shadow-[0_30px_60px_-24px_rgba(78,36,39,0.5)] sm:aspect-[5/4] lg:aspect-[4/5]">
+            <div className="relative aspect-4/5 overflow-hidden rounded-3xl shadow-[0_30px_60px_-24px_rgba(78,36,39,0.5)] sm:aspect-5/4 lg:aspect-4/5">
               <img
                 src="/salonpic.jpg"
                 alt="Icon Studio storefront in Sunnyside, Queens"
@@ -109,10 +109,10 @@ export default function Home() {
                 loading="eager"
               />
               {/* warm wash to harmonize the loud banner with the brand */}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#4E2427]/55 via-transparent to-transparent" aria-hidden="true" />
+              <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-[#4E2427]/55 via-transparent to-transparent" aria-hidden="true" />
               <div className="pointer-events-none absolute inset-0 bg-rose-500/10 mix-blend-multiply" aria-hidden="true" />
               {/* address chip — also covers the map watermark corner */}
-              <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-xl border border-gold-500/40 bg-background/95 px-3.5 py-2.5 shadow-lg backdrop-blur">
+              <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-xl border border-gold-500/40 bg-background/95 px-3.5 py-2.5 shadow-lg backdrop-blur-sm">
                 <MapPin className="h-4 w-4 shrink-0 text-gold-600" aria-hidden="true" />
                 <span className="text-xs font-medium leading-tight text-foreground">
                   39-46 Queens Blvd<br />Sunnyside, Queens
@@ -200,7 +200,7 @@ export default function Home() {
                     loading="lazy"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-[#4E2427]/0 transition-colors duration-300 group-hover:bg-[#4E2427]/20" aria-hidden="true" />
+                  <div className="absolute inset-0 bg-rose-900/0 transition-colors duration-300 group-hover:bg-rose-900/20" aria-hidden="true" />
                 </Link>
               ))}
             </div>
@@ -228,7 +228,7 @@ export default function Home() {
       {/* CTA */}
       <section className="container mx-auto px-4 pb-24 md:px-6">
         <Reveal>
-          <div className="relative overflow-hidden rounded-3xl border border-gold-500/40 bg-gradient-to-b from-white to-[#F9F1EA] px-6 py-16 text-center">
+          <div className="relative overflow-hidden rounded-3xl border border-gold-500/40 bg-linear-to-b from-white to-[#F9F1EA] px-6 py-16 text-center">
             <span className="eyebrow eyebrow--center">Your chair is waiting</span>
             <h2 className="mx-auto mt-4 max-w-2xl text-3xl font-semibold md:text-4xl">
               Ready for your transformation?

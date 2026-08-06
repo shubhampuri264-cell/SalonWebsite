@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "CommonJS",
+    // nodenext emits CommonJS here because package.json has no "type" field.
+    // TS 7 removed the old implicit node10 resolution this config relied on.
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "lib": ["ES2022"],
     "outDir": "./dist",
     "rootDir": "..",
@@ -12,8 +15,7 @@
     "resolveJsonModule": true,
     "paths": {
       "@luxe/shared": ["../packages/shared/src/index.ts"]
-    },
-    "baseUrl": "."
+    }
   },
   "include": ["src/**/*", "../packages/shared/src/**/*"],
   "exclude": ["node_modules", "dist"]

@@ -110,7 +110,6 @@ async function call<T>(
 
 export interface AvailabilitySlot {
   time: string;
-  availableStylistIds: string[];
 }
 
 export function getAvailability(
@@ -181,6 +180,9 @@ export interface CustomerAppointment {
   status: string;
   notes: string | null;
   cancellation_token: string;
+  service_id: string;
+  /** Needed to keep a reschedule with the same person — availability is per-stylist. */
+  stylist_id: string;
   services: { name: string; category: string } | Array<{ name: string; category: string }> | null;
   stylists: { name: string } | Array<{ name: string }> | null;
 }

@@ -9,7 +9,9 @@ export const availabilityRouter = Router();
 const querySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
   service_id: z.string().uuid('Invalid service_id'),
-  stylist_id: z.string().optional(),
+  // Required, and a real stylist. A slot grid is only meaningful for one named
+  // person — see migration 018.
+  stylist_id: z.string().uuid('Invalid stylist_id'),
 });
 
 availabilityRouter.get('/', async (req, res, next) => {
@@ -46,55 +48,40 @@ availabilityRouter.get('/', async (req, res, next) => {
       return;
     }
 
-    // Determine which stylists to check
-    let stylistIds: string[];
+    const { data: stylist } = await supabaseAdmin
+      .from('stylists')
+      .select('id')
+      .eq('id', stylist_id)
+      .eq('is_active', true)
+      .maybeSingle();
 
-    if (stylist_id && stylist_id !== 'anyone') {
-      stylistIds = [stylist_id];
-    } else {
-      const { data: stylists, error: stylistError } = await supabaseAdmin
-        .from('stylists')
-        .select('id')
-        .eq('is_active', true);
-
-      if (stylistError || !stylists) {
-        throw stylistError ?? new Error('Failed to fetch stylists');
-      }
-      stylistIds = stylists.map((s) => s.id);
+    if (!stylist) {
+      res.status(404).json({ error: 'Stylist not found' });
+      return;
     }
 
-    // For "anyone" mode, collect per-stylist availability and return union
-    if (!stylist_id || stylist_id === 'anyone') {
-      const slotMap = new Map<string, string[]>(); // time -> stylist IDs
+    // Never advertise times for a pairing the booking endpoint would refuse.
+    const { data: pairing, error: pairingError } = await supabaseAdmin
+      .from('stylist_services')
+      .select('stylist_id')
+      .eq('stylist_id', stylist.id)
+      .eq('service_id', service_id)
+      .maybeSingle();
 
-      for (const sid of stylistIds) {
-        const slots = await getSlotsForStylist(
-          sid,
-          date,
-          hours,
-          service.duration_min
-        );
-        for (const slot of slots) {
-          const existing = slotMap.get(slot) ?? [];
-          existing.push(sid);
-          slotMap.set(slot, existing);
-        }
-      }
-
-      const result = Array.from(slotMap.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([time, availableStylistIds]) => ({ time, availableStylistIds }));
-
-      res.json({ slots: result });
-    } else {
-      const slots = await getSlotsForStylist(
-        stylistIds[0],
-        date,
-        hours,
-        service.duration_min
-      );
-      res.json({ slots: slots.map((time) => ({ time, availableStylistIds: [stylistIds[0]] })) });
+    if (pairingError) {
+      res.status(503).json({ error: 'Could not load availability. Please try again.' });
+      return;
     }
+    if (!pairing) {
+      res.status(400).json({
+        error: 'That stylist does not offer this service',
+        code: 'STYLIST_SERVICE_MISMATCH',
+      });
+      return;
+    }
+
+    const slots = await getSlotsForStylist(stylist.id, date, hours, service.duration_min);
+    res.json({ slots: slots.map((time) => ({ time })) });
   } catch (err) {
     next(err);
   }

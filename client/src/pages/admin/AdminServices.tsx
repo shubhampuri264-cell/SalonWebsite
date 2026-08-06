@@ -171,7 +171,7 @@ export default function AdminServices() {
               <select
                 value={addState.category}
                 onChange={(e) => setAddState((s) => ({ ...s, category: e.target.value as ServiceCategory }))}
-                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
               >
                 {SERVICE_CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>{SERVICE_CATEGORY_LABELS[cat]}</option>
@@ -184,7 +184,7 @@ export default function AdminServices() {
                 value={addState.name}
                 onChange={(e) => setAddState((s) => ({ ...s, name: e.target.value }))}
                 placeholder="Service name"
-                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
               />
             </div>
             <div>
@@ -193,7 +193,7 @@ export default function AdminServices() {
                 value={addState.description}
                 onChange={(e) => setAddState((s) => ({ ...s, description: e.target.value }))}
                 placeholder="Short description"
-                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
               />
             </div>
             <div>
@@ -205,7 +205,7 @@ export default function AdminServices() {
                 min="0"
                 step="0.01"
                 placeholder="e.g. 45"
-                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
               />
             </div>
             <div>
@@ -217,7 +217,7 @@ export default function AdminServices() {
                 min="0"
                 step="0.01"
                 placeholder="e.g. 65"
-                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
               />
             </div>
             <div>
@@ -228,7 +228,7 @@ export default function AdminServices() {
                 type="number"
                 min="1"
                 placeholder="e.g. 30"
-                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
               />
             </div>
           </div>
@@ -287,13 +287,13 @@ export default function AdminServices() {
                               <input
                                 value={editState.name}
                                 onChange={(e) => setEditState((v) => ({ ...v, name: e.target.value }))}
-                                className="w-full rounded-lg border border-input px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                                className="w-full rounded-lg border border-input px-2 py-1 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
                               />
                               <input
                                 value={editState.description}
                                 onChange={(e) => setEditState((v) => ({ ...v, description: e.target.value }))}
                                 placeholder="Description"
-                                className="mt-1 w-full rounded-lg border border-input px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-rose-400"
+                                className="mt-1 w-full rounded-lg border border-input px-2 py-1 text-xs outline-hidden focus:ring-2 focus:ring-rose-400"
                               />
                             </td>
                             <td className="px-4 py-2">
@@ -305,7 +305,7 @@ export default function AdminServices() {
                                   min="0"
                                   step="0.01"
                                   placeholder="Min"
-                                  className="w-20 rounded-lg border border-input px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                                  className="w-20 rounded-lg border border-input px-2 py-1 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
                                 />
                                 <input
                                   value={editState.price_max}
@@ -314,7 +314,7 @@ export default function AdminServices() {
                                   min="0"
                                   step="0.01"
                                   placeholder="Max"
-                                  className="w-20 rounded-lg border border-input px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                                  className="w-20 rounded-lg border border-input px-2 py-1 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
                                 />
                               </div>
                             </td>
@@ -324,7 +324,7 @@ export default function AdminServices() {
                                 onChange={(e) => setEditState((v) => ({ ...v, duration_min: e.target.value }))}
                                 type="number"
                                 min="1"
-                                className="w-20 rounded-lg border border-input px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                                className="w-20 rounded-lg border border-input px-2 py-1 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
                               />
                             </td>
                             <td className="px-4 py-2" />

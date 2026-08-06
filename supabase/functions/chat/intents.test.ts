@@ -66,12 +66,14 @@ Deno.test('validateParams rejects malformed ids rather than passing them on', ()
   assertFalse(validateParams('pick_time', { time: '25:00' }).ok);
   assertFalse(validateParams('pick_time', { time: '2pm' }).ok);
   assertFalse(validateParams('pick_category', { category: 'male' }).ok);
+  // 'anyone' was a valid stylist until migration 018: it resolved to whoever
+  // was free, including a stylist who does not perform the service.
+  assertFalse(validateParams('pick_stylist', { stylist_id: 'anyone' }).ok);
 });
 
 Deno.test('validateParams accepts well-formed params', () => {
   const uuid = '7ebccb06-174b-452e-983b-4beb9c505d58';
   assert(validateParams('pick_service', { service_id: uuid }).ok);
-  assert(validateParams('pick_stylist', { stylist_id: 'anyone' }).ok);
   assert(validateParams('pick_stylist', { stylist_id: uuid }).ok);
   assert(validateParams('pick_date', { date: '2026-08-06' }).ok);
   assert(validateParams('pick_time', { time: '14:30' }).ok);

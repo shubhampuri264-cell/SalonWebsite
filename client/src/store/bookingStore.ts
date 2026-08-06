@@ -12,15 +12,24 @@ interface ContactInfo {
 interface BookingState {
   currentStep: 0 | 1 | 2 | 3;
   selectedService: Service | null;
-  selectedStylist: Stylist | 'anyone' | null;
+  selectedStylist: Stylist | null;
+  /**
+   * Stylists who perform `selectedService`, resolved in StepService the moment
+   * a service is picked. Held here rather than fetched in StepStylist because
+   * the wizard has to know how many there are *before* deciding whether to show
+   * the stylist step at all — and because the Back button on the date step
+   * needs the same answer.
+   */
+  eligibleStylists: Stylist[];
   selectedDate: string | null;   // YYYY-MM-DD
   selectedTime: string | null;   // HH:MM
   contactInfo: ContactInfo;
 
-  setService: (service: Service) => void;
-  setStylist: (stylist: Stylist | 'anyone') => void;
+  setService: (service: Service, eligible: Stylist[]) => void;
+  setStylist: (stylist: Stylist) => void;
   setDateTime: (date: string, time: string) => void;
   setContactInfo: (info: ContactInfo) => void;
+  goToStep: (step: 0 | 1 | 2 | 3) => void;
   nextStep: () => void;
   prevStep: () => void;
   reset: () => void;
@@ -39,12 +48,21 @@ export const useBookingStore = create<BookingState>()(
       currentStep: 0,
       selectedService: null,
       selectedStylist: null,
+      eligibleStylists: [],
       selectedDate: null,
       selectedTime: null,
       contactInfo: defaultContactInfo,
 
-      setService: (service) =>
-        set({ selectedService: service }),
+      // Changing the service invalidates the stylist: the one already chosen
+      // may not perform the new one.
+      setService: (service, eligible) =>
+        set({
+          selectedService: service,
+          eligibleStylists: eligible,
+          selectedStylist: eligible.length === 1 ? eligible[0] : null,
+          selectedDate: null,
+          selectedTime: null,
+        }),
 
       setStylist: (stylist) =>
         set({ selectedStylist: stylist }),
@@ -54,6 +72,8 @@ export const useBookingStore = create<BookingState>()(
 
       setContactInfo: (info) =>
         set({ contactInfo: info }),
+
+      goToStep: (step) => set({ currentStep: step }),
 
       nextStep: () =>
         set((s) => ({
@@ -70,6 +90,7 @@ export const useBookingStore = create<BookingState>()(
           currentStep: 0,
           selectedService: null,
           selectedStylist: null,
+          eligibleStylists: [],
           selectedDate: null,
           selectedTime: null,
           contactInfo: defaultContactInfo,
@@ -78,6 +99,21 @@ export const useBookingStore = create<BookingState>()(
     {
       name: 'icon-booking-wizard',
       storage: createJSONStorage(() => sessionStorage),
+      // Bumped when stylist eligibility landed. A session persisted before then
+      // can hold selectedStylist: 'anyone', or a stylist who does not perform
+      // the chosen service — neither is representable any more, and restoring
+      // one leaves the wizard on a step it cannot submit from. Nothing useful
+      // can be salvaged, so those sessions start again.
+      version: 2,
+      migrate: () => ({
+        currentStep: 0 as const,
+        selectedService: null,
+        selectedStylist: null,
+        eligibleStylists: [],
+        selectedDate: null,
+        selectedTime: null,
+        contactInfo: defaultContactInfo,
+      }),
     }
   )
 );

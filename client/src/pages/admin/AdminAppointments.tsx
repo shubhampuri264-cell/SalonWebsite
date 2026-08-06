@@ -216,7 +216,7 @@ export default function AdminAppointments() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search by client, phone, service, or stylist"
-          className="min-w-[260px] flex-1 rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+          className="min-w-[260px] flex-1 rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
           aria-label="Search appointments"
         />
         <div className="flex flex-wrap gap-2">
@@ -247,13 +247,13 @@ export default function AdminAppointments() {
             setFilterDate(e.target.value);
             setQuickDate('custom');
           }}
-          className="rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+          className="rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
           aria-label="Filter by date"
         />
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as AppointmentStatus | '')}
-          className="rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+          className="rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
           aria-label="Filter by status"
         >
           <option value="">All statuses</option>
@@ -377,7 +377,7 @@ export default function AdminAppointments() {
                         onChange={(e) =>
                           handleStatusChange(appt.id, e.target.value as AppointmentStatus)
                         }
-                        className="rounded-md border border-input px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-rose-400"
+                        className="rounded-md border border-input px-2 py-1 text-xs outline-hidden focus:ring-1 focus:ring-rose-400"
                         aria-label={`Update status for ${appt.client_name}`}
                       >
                         {Object.entries(APPOINTMENT_STATUS_LABELS).map(([value, label]) => (

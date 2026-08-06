@@ -93,7 +93,7 @@ export default function AdminOverview() {
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <Link
           to="/admin/appointments"
-          className="flex items-center gap-4 rounded-xl border border-border bg-white p-5 hover:border-rose-300 hover:shadow-sm transition-all"
+          className="flex items-center gap-4 rounded-xl border border-border bg-white p-5 hover:border-rose-300 hover:shadow-xs transition-all"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-100">
             <Calendar className="h-5 w-5 text-rose-600" />
@@ -102,7 +102,7 @@ export default function AdminOverview() {
         </Link>
         <Link
           to="/admin/services"
-          className="flex items-center gap-4 rounded-xl border border-border bg-white p-5 hover:border-rose-300 hover:shadow-sm transition-all"
+          className="flex items-center gap-4 rounded-xl border border-border bg-white p-5 hover:border-rose-300 hover:shadow-xs transition-all"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-100">
             <Scissors className="h-5 w-5 text-rose-600" />
@@ -111,7 +111,7 @@ export default function AdminOverview() {
         </Link>
         <Link
           to="/admin/blocked-slots"
-          className="flex items-center gap-4 rounded-xl border border-border bg-white p-5 hover:border-rose-300 hover:shadow-sm transition-all"
+          className="flex items-center gap-4 rounded-xl border border-border bg-white p-5 hover:border-rose-300 hover:shadow-xs transition-all"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-100">
             <Ban className="h-5 w-5 text-rose-600" />

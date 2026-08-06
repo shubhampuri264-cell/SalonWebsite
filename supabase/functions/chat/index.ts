@@ -22,7 +22,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 
-import { fetchLivePromotions, fetchServices, fetchStylists } from './catalog.ts';
+import { fetchLivePromotions, fetchServices, fetchStylists, fetchStylistServices } from './catalog.ts';
 import { classify, isInScope } from './classify.ts';
 import { salonNow, salonToday } from './dates.ts';
 import { trackBlocked, trackLabel, trackNode } from './funnel.ts';
@@ -232,13 +232,18 @@ async function respond(input: {
 
   session.turns += 1;
 
-  const [services, stylists] = await Promise.all([fetchServices(), fetchStylists()]);
+  const [services, stylists, stylistServices] = await Promise.all([
+    fetchServices(),
+    fetchStylists(),
+    fetchStylistServices(),
+  ]);
   const baseContext: Omit<HandlerContext, 'params'> = {
     session,
     clientIp: ip,
     customerToken,
     services,
     stylists,
+    stylistServices,
   };
 
   // --- 3. menu tap: no model at all ----------------------------------------
@@ -252,7 +257,7 @@ async function respond(input: {
       console.warn(JSON.stringify({ at: 'validate', intent: body.intent, reason: validated.message }));
       return reply(sessionId, {
         text: "Something went wrong with that option. Let's try again.",
-        chips: chipsForNode(session.node, session, services),
+        chips: chipsForNode(session.node, session, services, stylists, stylistServices),
         node: session.node,
         composerEnabled: aiAvailable(),
       }, cors, 400);
@@ -284,7 +289,7 @@ async function respond(input: {
     // happened as far as the conversation is concerned.
     return reply(sessionId, {
       text: verdict.reply,
-      chips: chipsForNode(session.node, session, services),
+      chips: chipsForNode(session.node, session, services, stylists, stylistServices),
       node: session.node,
       composerEnabled: aiAvailable(),
     }, cors);
@@ -296,7 +301,7 @@ async function respond(input: {
   if (!client) {
     return reply(sessionId, {
       text: AI_UNAVAILABLE_MESSAGE,
-      chips: chipsForNode(session.node, session, services),
+      chips: chipsForNode(session.node, session, services, stylists, stylistServices),
       node: session.node,
       composerEnabled: false,
     }, cors);
@@ -315,7 +320,7 @@ async function respond(input: {
     trackBlocked(globalOk ? 'token_budget' : 'global_cap');
     return reply(sessionId, {
       text: AI_UNAVAILABLE_MESSAGE,
-      chips: chipsForNode(session.node, session, services),
+      chips: chipsForNode(session.node, session, services, stylists, stylistServices),
       node: session.node,
       composerEnabled: false,
     }, cors);
@@ -364,7 +369,7 @@ async function respond(input: {
     // reached, so an off-topic message costs one Haiku call and nothing more.
     return reply(sessionId, {
       text: OFF_TOPIC_MESSAGE,
-      chips: chipsForNode(session.node, session, services),
+      chips: chipsForNode(session.node, session, services, stylists, stylistServices),
       node: session.node,
       composerEnabled: true,
     }, cors);
@@ -372,7 +377,7 @@ async function respond(input: {
 
   // --- 7. main model --------------------------------------------------------
   const promotions = await fetchLivePromotions();
-  const systemPrompt = buildSystemPrompt({ services, stylists, promotions, now });
+  const systemPrompt = buildSystemPrompt({ services, stylists, stylistServices, promotions, now });
 
   const understood = await understand(client, {
     systemPrompt,
@@ -397,7 +402,7 @@ async function respond(input: {
   if (understood.refused || !proposed.success) {
     return reply(sessionId, {
       text: understood.refused ? OFF_TOPIC_MESSAGE : FALLBACK_MESSAGE,
-      chips: chipsForNode(session.node, session, services),
+      chips: chipsForNode(session.node, session, services, stylists, stylistServices),
       node: session.node,
       composerEnabled: true,
     }, cors);

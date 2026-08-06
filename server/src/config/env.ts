@@ -10,10 +10,12 @@ const envSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   SUPABASE_JWT_SECRET: z.string().min(1),
   RESEND_API_KEY: z.string().min(1),
+  // zod 4: .default() on a transformed schema takes the OUTPUT type and
+  // short-circuits the transform when the variable is absent.
   TWILIO_ENABLED: z
     .string()
     .transform((v) => v === 'true')
-    .default('false'),
+    .default(false),
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_PHONE_NUMBER: z.string().optional(),

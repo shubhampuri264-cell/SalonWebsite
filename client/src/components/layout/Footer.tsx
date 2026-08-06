@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
-import { Scissors, Instagram, MapPin, Phone, Mail } from 'lucide-react';
+import { Scissors, MapPin, Phone, Mail } from 'lucide-react';
+import { Instagram } from '@/components/icons/Instagram';
 import { SALON_INFO } from '@/utils/dates';
 
 export default function Footer() {
   return (
     <footer className="bg-[#2A2224] text-[#CDC3C4]">
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-gold-500/60 to-transparent" />
+      <div className="h-px w-full bg-linear-to-r from-transparent via-gold-500/60 to-transparent" />
       <div className="container mx-auto px-4 py-14 md:px-6">
         <div className="grid gap-10 md:grid-cols-3">
           {/* Brand */}

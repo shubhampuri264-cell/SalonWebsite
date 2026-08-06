@@ -1,5 +1,6 @@
-import { Helmet } from 'react-helmet-async';
-import { MapPin, Phone, Mail, Clock, Instagram } from 'lucide-react';
+import { Helmet } from '@dr.pogodin/react-helmet';
+import { MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { Instagram } from '@/components/icons/Instagram';
 import { HOURS_DISPLAY, SALON_INFO } from '@/utils/dates';
 
 export default function Location() {
@@ -26,7 +27,7 @@ export default function Location() {
 
         <div className="grid gap-10 lg:grid-cols-2">
           {/* Salon photo */}
-          <div className="overflow-hidden rounded-3xl border border-gold-500/20 shadow-sm">
+          <div className="overflow-hidden rounded-3xl border border-gold-500/20 shadow-xs">
             <img
               src="/location-salon.jpeg"
               alt="Icon Studio salon"

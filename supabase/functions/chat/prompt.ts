@@ -20,7 +20,12 @@
 //    salon's legal problem, so the design removes the ability rather than
 //    discouraging the behaviour.
 
-import type { CatalogService, CatalogStylist, LivePromotion } from './catalog.ts';
+import type {
+  CatalogService,
+  CatalogStylist,
+  LivePromotion,
+  StylistServiceMap,
+} from './catalog.ts';
 import { CATEGORY_LABELS, priceLabel } from './catalog.ts';
 import { MODEL_INTENTS } from './intents.ts';
 import { BUSINESS_HOURS } from './dates.ts';
@@ -33,7 +38,7 @@ import { BUSINESS_HOURS } from './dates.ts';
  * key in practice: changing the prompt changes the bytes, so the first request
  * after a bump is a cache write.
  */
-export const PROMPT_VERSION = '1.0.0';
+export const PROMPT_VERSION = '1.1.0';
 
 const SALON_FACTS = `Icon Studio is a hair and beauty salon at 39-46 Queens Blvd, Sunnyside, NY 11104.
 Phone: (718) 255-6940.
@@ -103,12 +108,54 @@ function renderServices(services: CatalogService[]): string {
   return sections.join('\n\n');
 }
 
-function renderStylists(stylists: CatalogStylist[]): string {
+/**
+ * Stylists, each with what they actually perform.
+ *
+ * This is the enforced rule (see migration 018), not a hint: a pick_stylist for
+ * someone who does not do the service is rejected by the handler and again by
+ * the booking API. Stating it here is what stops the model proposing the
+ * pairing in the first place, which is a better experience than being corrected.
+ *
+ * Rendered as whole categories wherever a stylist covers every service in one,
+ * with individual services named only where the coverage is partial. Listing
+ * sixty ids per stylist would be accurate and useless — it would bury the shape
+ * of the split ("she does hair, he does everything else, they share one thing")
+ * that the model needs in order to route a request correctly.
+ */
+function renderStylists(
+  stylists: CatalogStylist[],
+  services: CatalogService[],
+  stylistServices: StylistServiceMap,
+): string {
   if (stylists.length === 0) return 'No stylists listed.';
+
+  // Category -> services, in the order the catalogue query returned them. The
+  // ordering matters for prompt caching, which is a byte-exact prefix match.
+  const byCategory = new Map<string, CatalogService[]>();
+  for (const service of services) {
+    const list = byCategory.get(service.category);
+    if (list) list.push(service);
+    else byCategory.set(service.category, [service]);
+  }
+
   return stylists
-    .map((s) => {
-      const specialties = s.specialties?.length ? ` - ${s.specialties.join(', ')}` : '';
-      return `  ${s.id} | ${s.name}${specialties}`;
+    .map((stylist) => {
+      const parts: string[] = [];
+
+      for (const [category, categoryServices] of byCategory) {
+        const mine = categoryServices.filter((service) =>
+          (stylistServices.get(service.id) ?? []).includes(stylist.id)
+        );
+        if (mine.length === 0) continue;
+        if (mine.length === categoryServices.length) {
+          parts.push(`all ${CATEGORY_LABELS[category] ?? category}`);
+        } else {
+          parts.push(...mine.map((s) => s.name));
+        }
+      }
+
+      const does = parts.length ? parts.join(', ') : 'nothing bookable online';
+      return `  ${stylist.id} | ${stylist.name} | does: ${does}`;
     })
     .join('\n');
 }
@@ -126,7 +173,7 @@ root             - off topic, unclear, or they want to start again
 book_start       - wants to book but has not said what
 pick_category    - named a kind of service; params: { "category": "hair" | "threading" | "waxing" | "facial" | "special_treatment" }
 pick_service     - named a specific service; params: { "service_id": "<id from the list above>" }
-pick_stylist     - named a stylist, or said anyone; params: { "stylist_id": "<id above>" or "anyone" }
+pick_stylist     - named a stylist; params: { "stylist_id": "<id above>" }
 pick_date        - named a day; params: { "date": "YYYY-MM-DD" }
 pick_time        - named a time; params: { "time": "HH:MM" in 24-hour form }
 my_appointments  - asking about their own bookings
@@ -138,6 +185,7 @@ hours            - asking about hours, address, or directions
 escalate         - wants a human, or you cannot help
 
 Use only ids copied exactly from the lists above. If you are not certain which service or stylist they mean, return the intent without params and ask which one.
+Each stylist only performs what is listed against them. Never return a pick_stylist for someone whose list does not include the service being booked - if someone asks for a service the stylist they named does not do, return pick_service for that service and let the website show who does it.
 Resolve relative dates ("tomorrow", "next Friday") against the current date given in the message. If a date is ambiguous, ask rather than guess.`;
 
 /**
@@ -154,6 +202,7 @@ const MEMO_MS = 60_000;
 export function buildSystemPrompt(input: {
   services: CatalogService[];
   stylists: CatalogStylist[];
+  stylistServices: StylistServiceMap;
   promotions: LivePromotion[];
   now: number;
 }): string {
@@ -171,8 +220,8 @@ export function buildSystemPrompt(input: {
     'SERVICES (id | name | price | duration | description)',
     renderServices(input.services),
     '',
-    'STYLISTS (id | name | specialties)',
-    renderStylists(input.stylists),
+    'STYLISTS (id | name | what they perform)',
+    renderStylists(input.stylists, input.services, input.stylistServices),
     '',
     'CURRENT OFFERS (quote the wording exactly, never paraphrase)',
     renderPromotions(input.promotions),

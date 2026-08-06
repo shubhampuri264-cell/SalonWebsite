@@ -18,7 +18,7 @@ export default function BookingWizard() {
   }, [currentStep]);
 
   return (
-    <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8">
+    <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-white p-6 shadow-xs md:p-8">
       {/* Progress bar */}
       <nav aria-label="Booking progress" className="mb-8">
         <ol className="flex items-center gap-0">
@@ -66,7 +66,7 @@ export default function BookingWizard() {
       </nav>
 
       {/* Step content */}
-      <div ref={headingRef} tabIndex={-1} className="outline-none">
+      <div ref={headingRef} tabIndex={-1} className="outline-hidden">
         {currentStep === 0 && <StepService />}
         {currentStep === 1 && <StepStylist />}
         {currentStep === 2 && <StepDateTime />}

@@ -22,7 +22,12 @@
 //   containment   the model never proposes a booking or a cancellation.
 
 import { classify, isInScope, type Label } from '../supabase/functions/chat/classify.ts';
-import { fetchLivePromotions, fetchServices, fetchStylists } from '../supabase/functions/chat/catalog.ts';
+import {
+  fetchLivePromotions,
+  fetchServices,
+  fetchStylistServices,
+  fetchStylists,
+} from '../supabase/functions/chat/catalog.ts';
 import { buildSystemPrompt, PROMPT_VERSION } from '../supabase/functions/chat/prompt.ts';
 import { containsNumbers, understand } from '../supabase/functions/chat/understand.ts';
 import { prefilter } from '../supabase/functions/chat/prefilter.ts';
@@ -118,16 +123,23 @@ async function main() {
   }
   const client = new Anthropic({ apiKey });
 
-  const [services, stylists, promotions] = await Promise.all([
+  const [services, stylists, stylistServices, promotions] = await Promise.all([
     fetchServices(),
     fetchStylists(),
+    fetchStylistServices(),
     fetchLivePromotions(),
   ]);
   if (services.length === 0) {
     console.error('No services loaded — check SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY.');
     Deno.exit(1);
   }
-  const systemPrompt = buildSystemPrompt({ services, stylists, promotions, now: Date.now() });
+  const systemPrompt = buildSystemPrompt({
+    services,
+    stylists,
+    stylistServices,
+    promotions,
+    now: Date.now(),
+  });
   console.log(`Catalogue: ${services.length} services, ${stylists.length} stylists, ${promotions.length} live offers\n`);
 
   for (const testCase of cases) {

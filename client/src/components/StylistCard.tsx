@@ -32,7 +32,7 @@ export default function StylistCard({
       {/* Headshot */}
       <div
         className={cn(
-          'flex items-center justify-center bg-gradient-to-br from-rose-50 to-accent',
+          'flex items-center justify-center bg-linear-to-br from-rose-50 to-accent',
           compact ? 'h-14 w-14 shrink-0 rounded-full' : 'h-60 w-full'
         )}
       >

@@ -41,8 +41,19 @@ export interface CatalogService {
 export interface CatalogStylist {
   id: string;
   name: string;
+  /** Display copy. Bookability lives in `stylist_services` — see migration 018. */
   specialties: string[] | null;
 }
+
+/**
+ * Which stylists perform which service: service id -> stylist ids.
+ *
+ * Loaded whole rather than queried per service. The table is one row per
+ * bookable pairing — around sixty for a two-person salon — so a single read
+ * costs less than the round trips it replaces, and it lets a handler answer
+ * "who can do this" without touching the network mid-conversation.
+ */
+export type StylistServiceMap = Map<string, string[]>;
 
 export interface LivePromotion {
   title: string;
@@ -85,6 +96,62 @@ export async function fetchStylists(): Promise<CatalogStylist[]> {
     return [];
   }
   return (data ?? []) as CatalogStylist[];
+}
+
+/**
+ * The stylist -> service mapping, as service id -> stylist ids.
+ *
+ * Returns an EMPTY map on failure, which makes every service look unstaffed and
+ * stops the booking funnel at the stylist step. That is the correct direction to
+ * fail: the alternative reading of "no data" is "anyone can do anything", which
+ * is exactly the bug migration 018 exists to close. The customer is told to call
+ * the salon rather than handed a booking with the wrong person.
+ */
+export async function fetchStylistServices(): Promise<StylistServiceMap> {
+  const map: StylistServiceMap = new Map();
+
+  const { data, error } = await supabase()
+    .from('stylist_services')
+    .select('stylist_id, service_id');
+
+  if (error) {
+    console.error('[catalog] stylist_services query failed:', error.message);
+    return map;
+  }
+
+  for (const row of data ?? []) {
+    const serviceId = row.service_id as string;
+    const list = map.get(serviceId);
+    if (list) list.push(row.stylist_id as string);
+    else map.set(serviceId, [row.stylist_id as string]);
+  }
+  return map;
+}
+
+/**
+ * Who may be booked for what.
+ *
+ * The authoritative copy of this rule is api/_lib/eligibility.ts, which the
+ * booking API applies to every request. This one exists so Iris never offers a
+ * pairing that would then be rejected — it is a UX filter, not a security
+ * boundary. See migration 018.
+ */
+export function stylistCanDo(
+  map: StylistServiceMap,
+  stylistId: string,
+  serviceId: string,
+): boolean {
+  return (map.get(serviceId) ?? []).includes(stylistId);
+}
+
+/** Active stylists who perform this service, in the roster's display order. */
+export function eligibleStylists(
+  stylists: CatalogStylist[],
+  map: StylistServiceMap,
+  serviceId: string,
+): CatalogStylist[] {
+  const allowed = new Set(map.get(serviceId) ?? []);
+  return stylists.filter((s) => allowed.has(s.id));
 }
 
 /**

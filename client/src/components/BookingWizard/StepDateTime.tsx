@@ -12,14 +12,15 @@ export default function StepDateTime() {
   const {
     selectedService,
     selectedStylist,
+    eligibleStylists,
     selectedDate,
     selectedTime,
     setDateTime,
     nextStep,
-    prevStep,
+    goToStep,
   } = useBookingStore();
 
-  const [slots, setSlots] = useState<{ time: string; availableStylistIds: string[] }[]>([]);
+  const [slots, setSlots] = useState<{ time: string }[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState<string | null>(null);
 
@@ -30,10 +31,11 @@ export default function StepDateTime() {
     ? new Date(selectedDate + 'T12:00:00')
     : undefined;
 
-  const stylistId =
-    typeof selectedStylist === 'object' && selectedStylist
-      ? selectedStylist.id
-      : 'anyone';
+  const stylistId = selectedStylist?.id ?? null;
+
+  // Back skips the stylist step when it was skipped on the way in — with one
+  // eligible stylist there is nothing there to change.
+  const goBack = () => goToStep(eligibleStylists.length > 1 ? 1 : 0);
 
   /**
    * Fetches availability for the currently selected date/service/stylist.
@@ -43,7 +45,7 @@ export default function StepDateTime() {
    */
   const fetchSlots = useCallback(
     (showSpinner: boolean) => {
-      if (!selectedDate || !selectedService) return;
+      if (!selectedDate || !selectedService || !stylistId) return;
 
       setSlotsError(null);
       if (showSpinner) setLoadingSlots(true);
@@ -51,7 +53,7 @@ export default function StepDateTime() {
       getAvailability({
         date: selectedDate,
         service_id: selectedService.id,
-        stylist_id: stylistId === 'anyone' ? undefined : stylistId,
+        stylist_id: stylistId,
       })
         .then((res) => {
           const newSlots = res.slots ?? [];
@@ -127,7 +129,9 @@ export default function StepDateTime() {
     <div>
       <h2 className="font-serif text-2xl font-semibold">Pick a Date & Time</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Select your preferred date, then choose an available time slot.
+        {selectedStylist
+          ? `Select your preferred date, then choose a time with ${selectedStylist.name}.`
+          : 'Select your preferred date, then choose an available time slot.'}
       </p>
 
       <div className="mt-6 grid gap-6 md:grid-cols-2">
@@ -142,28 +146,34 @@ export default function StepDateTime() {
               (date) => !isSalonOpen(date),
             ]}
             showOutsideDays={false}
+            // v9+ renders nav as a sibling above the month, not inside the
+            // caption — the absolute overlay recreates the old centered-caption
+            // layout. Modifier classes (selected/today/disabled) land on the
+            // td, so the visible day button is styled through [&>button].
             classNames={{
-              months: 'w-full',
+              months: 'w-full relative',
               month: 'w-full',
-              caption: 'flex justify-center items-center mb-4 relative',
+              nav: 'absolute inset-x-0 top-0 flex items-center justify-between',
+              button_previous:
+                'h-7 w-7 flex items-center justify-center rounded-md border border-border hover:bg-muted transition-colors [&_svg]:h-4 [&_svg]:w-4 [&_svg]:fill-current',
+              button_next:
+                'h-7 w-7 flex items-center justify-center rounded-md border border-border hover:bg-muted transition-colors [&_svg]:h-4 [&_svg]:w-4 [&_svg]:fill-current',
+              month_caption: 'h-7 flex justify-center items-center mb-4',
               caption_label: 'text-sm font-semibold',
-              nav: 'flex items-center gap-1',
-              nav_button:
-                'h-7 w-7 flex items-center justify-center rounded-md border border-border hover:bg-muted transition-colors',
-              nav_button_previous: 'absolute left-0',
-              nav_button_next: 'absolute right-0',
-              table: 'w-full border-collapse',
-              head_row: 'flex w-full',
-              head_cell:
+              month_grid: 'w-full border-collapse',
+              weekdays: 'flex w-full',
+              weekday:
                 'flex-1 text-center text-xs font-medium text-muted-foreground pb-2',
-              row: 'flex w-full mt-1',
-              cell: 'flex-1 text-center',
-              day: 'mx-auto h-9 w-9 flex items-center justify-center rounded-full text-sm transition-colors hover:bg-rose-50 hover:text-rose-600 cursor-pointer',
-              day_selected:
-                'bg-rose-500 text-white hover:bg-rose-600 hover:text-white font-semibold',
-              day_today: 'font-bold text-rose-600',
-              day_disabled: 'text-muted-foreground opacity-40 cursor-default hover:bg-transparent hover:text-muted-foreground',
-              day_outside: 'hidden',
+              week: 'flex w-full mt-1',
+              day: 'flex-1 text-center p-0',
+              day_button:
+                'mx-auto h-9 w-9 flex items-center justify-center rounded-full text-sm transition-colors hover:bg-rose-50 hover:text-rose-600 cursor-pointer',
+              selected:
+                '[&>button]:bg-rose-500 [&>button]:text-white [&>button]:font-semibold [&>button:hover]:bg-rose-600 [&>button:hover]:text-white',
+              today: '[&>button]:font-bold [&>button]:text-rose-600',
+              disabled:
+                '[&>button]:text-muted-foreground [&>button]:opacity-40 [&>button]:cursor-default [&>button:hover]:bg-transparent [&>button:hover]:text-muted-foreground',
+              outside: 'hidden',
             }}
           />
         </div>
@@ -225,7 +235,7 @@ export default function StepDateTime() {
       </div>
 
       <button
-        onClick={prevStep}
+        onClick={goBack}
         className="mt-6 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         ← Back

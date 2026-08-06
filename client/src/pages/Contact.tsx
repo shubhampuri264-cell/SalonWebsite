@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from '@dr.pogodin/react-helmet';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Instagram, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { Instagram } from '@/components/icons/Instagram';
 import { contactFormSchema, type ContactFormValues } from '@/utils/validators';
 import { sendContactMessage } from '@/api/contact';
 import { SALON_INFO } from '@/utils/dates';
@@ -78,7 +79,7 @@ export default function Contact() {
           ) : (
             <form
               onSubmit={handleSubmit(onSubmit)}
-              className="card-lux space-y-5 p-8 shadow-sm"
+              className="card-lux space-y-5 p-8 shadow-xs"
               noValidate
             >
               <div>
@@ -90,7 +91,7 @@ export default function Contact() {
                   id="name"
                   type="text"
                   placeholder="Jane Smith"
-                  className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+                  className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
                   aria-invalid={!!errors.name}
                 />
                 {errors.name && (
@@ -109,7 +110,7 @@ export default function Contact() {
                   id="email"
                   type="email"
                   placeholder="jane@example.com"
-                  className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+                  className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
                   aria-invalid={!!errors.email}
                 />
                 {errors.email && (
@@ -128,7 +129,7 @@ export default function Contact() {
                   id="message"
                   rows={5}
                   placeholder="Your message..."
-                  className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent resize-none"
+                  className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent resize-none"
                   aria-invalid={!!errors.message}
                 />
                 {errors.message && (

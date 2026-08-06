@@ -1,4 +1,4 @@
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from '@dr.pogodin/react-helmet';
 import BookingWizard from '@/components/BookingWizard/BookingWizard';
 
 export default function Book() {

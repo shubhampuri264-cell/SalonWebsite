@@ -132,7 +132,7 @@ export default function AdminBlockSlots() {
               <label className="mb-1 block text-sm font-medium">Stylist</label>
               <select
                 {...register('stylist_id')}
-                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
               >
                 <option value="">Select stylist...</option>
                 {stylists.map((s) => (
@@ -151,7 +151,7 @@ export default function AdminBlockSlots() {
               <input
                 type="date"
                 {...register('blocked_date')}
-                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
               />
               {errors.blocked_date && (
                 <p className="mt-1 text-xs text-destructive">{errors.blocked_date.message}</p>
@@ -163,7 +163,7 @@ export default function AdminBlockSlots() {
               <input
                 type="time"
                 {...register('start_time')}
-                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
               />
               {errors.start_time && (
                 <p className="mt-1 text-xs text-destructive">{errors.start_time.message}</p>
@@ -175,7 +175,7 @@ export default function AdminBlockSlots() {
               <input
                 type="time"
                 {...register('end_time')}
-                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
               />
               {errors.end_time && (
                 <p className="mt-1 text-xs text-destructive">{errors.end_time.message}</p>
@@ -190,7 +190,7 @@ export default function AdminBlockSlots() {
                 type="text"
                 {...register('reason')}
                 placeholder="e.g. Lunch break, Vacation"
-                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400"
+                className="w-full rounded-lg border border-input px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-400"
               />
             </div>
           </div>

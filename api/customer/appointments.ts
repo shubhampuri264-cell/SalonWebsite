@@ -32,6 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       notes,
       cancellation_token,
       service_id,
+      stylist_id,
       services:service_id (name, category),
       stylists:stylist_id (name)
     `)

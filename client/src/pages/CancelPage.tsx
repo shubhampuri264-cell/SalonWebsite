@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from '@dr.pogodin/react-helmet';
 import { XCircle, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { cancelAppointment } from '@/api/appointments';
 import { ApiError } from '@/api/client';

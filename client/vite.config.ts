@@ -2,13 +2,16 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+// Vite 6+ loads this config as native ESM, where CJS __dirname does not exist.
+const configDir = import.meta.dirname;
+
 export default defineConfig({
   plugins: [react()],
-  envDir: path.resolve(__dirname, '..'),
+  envDir: path.resolve(configDir, '..'),
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@luxe/shared': path.resolve(__dirname, '../packages/shared/src/index.ts'),
+      '@': path.resolve(configDir, './src'),
+      '@luxe/shared': path.resolve(configDir, '../packages/shared/src/index.ts'),
     },
   },
   server: {

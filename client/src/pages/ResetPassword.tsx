@@ -79,7 +79,7 @@ export default function ResetPassword() {
               autoComplete="new-password"
               minLength={6}
               placeholder="At least 6 characters"
-              className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+              className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
             />
           </div>
           <div>
@@ -93,7 +93,7 @@ export default function ResetPassword() {
               onChange={(e) => setConfirm(e.target.value)}
               required
               autoComplete="new-password"
-              className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+              className="w-full rounded-lg border border-input px-4 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-rose-400 focus:border-transparent"
             />
             {confirm && password !== confirm && (
               <p className="mt-1 text-xs text-destructive">Passwords do not match</p>

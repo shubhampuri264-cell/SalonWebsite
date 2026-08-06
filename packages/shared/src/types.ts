@@ -12,6 +12,11 @@ export interface Stylist {
   name: string;
   title: string;
   bio: string;
+  /**
+   * Display copy only. Which services a stylist may actually be booked for
+   * lives in the `stylist_services` join table (migration 018) and is resolved
+   * server-side — ask GET /api/stylists?service_id=… rather than reading this.
+   */
   specialties: string[];
   years_exp: number;
   image_url: string | null;
@@ -82,13 +87,8 @@ export interface TimeSlot {
   available: boolean;
 }
 
-export interface AnyoneAvailabilitySlot {
-  time: string;
-  availableStylistIds: string[];
-}
-
 export interface CreateAppointmentPayload {
-  stylist_id: string | 'anyone';
+  stylist_id: string;
   service_id: string;
   client_name: string;
   client_email: string;

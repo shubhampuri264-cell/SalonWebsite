@@ -1,7 +1,7 @@
 {"id":"book-01","message":"I'd like to book an appointment","expect":{"label":"booking","intent":"book_start"}}
 {"id":"book-02","message":"can I get in for a haircut this week","expect":{"label":"booking"}}
 {"id":"book-03","message":"do you have anything thursday afternoon for a balayage","expect":{"label":"booking"}}
-{"id":"book-04","message":"I want to book a facial with Sumita","expect":{"label":"booking"}}
+{"id":"book-04","message":"I want to book a facial with Sazana","expect":{"label":"booking"}}
 {"id":"book-05","message":"whats your earliest availability","expect":{"label":"booking"}}
 {"id":"book-06","message":"can I come in tomorrow","expect":{"label":"booking"}}
 {"id":"book-07","message":"I need eyebrow threading, whenever you have space","expect":{"label":"booking"}}

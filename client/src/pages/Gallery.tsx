@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from '@dr.pogodin/react-helmet';
 import Lightbox from 'yet-another-react-lightbox';
 import Video from 'yet-another-react-lightbox/plugins/video';
 import 'yet-another-react-lightbox/styles.css';
@@ -86,7 +86,7 @@ export default function Gallery() {
             <div key={index} className="masonry-item" role="listitem">
               <button
                 onClick={() => setLightboxIndex(index)}
-                className="group w-full overflow-hidden rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+                className="group w-full overflow-hidden rounded-xl focus:outline-hidden focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
                 aria-label={slide.type === 'video' ? 'Play video' : `View ${(slide as ImageSlide).alt}`}
               >
                 {slide.type === 'video' ? (

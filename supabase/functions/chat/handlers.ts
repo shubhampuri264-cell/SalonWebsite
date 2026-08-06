@@ -16,8 +16,11 @@ import {
   CATEGORY_LABELS,
   type CatalogService,
   type CatalogStylist,
+  eligibleStylists,
   fetchLivePromotions,
   priceLabel,
+  stylistCanDo,
+  type StylistServiceMap,
 } from './catalog.ts';
 import {
   BOOKING_HORIZON_DAYS,
@@ -104,6 +107,8 @@ export interface HandlerContext {
   customerToken?: string;
   services: CatalogService[];
   stylists: CatalogStylist[];
+  /** service id -> stylist ids. See migration 018. */
+  stylistServices: StylistServiceMap;
   /** Non-empty when the model wrote a sentence worth showing above the cards. */
   modelReply?: string;
 }
@@ -182,6 +187,8 @@ export function chipsForNode(
   node: NodeId,
   session: Session,
   services: CatalogService[],
+  stylists: CatalogStylist[],
+  stylistServices: StylistServiceMap,
 ): Chip[] {
   const { draft } = session;
 
@@ -202,11 +209,16 @@ export function chipsForNode(
           : categoryChips(services),
       );
 
-    case 'stylist':
+    case 'stylist': {
+      // Only the stylists who perform the drafted service. There is no "anyone
+      // available" chip any more: it assigned whoever was free regardless of
+      // whether they do the service.
+      const service = findService(services, draft.serviceId);
       return withEscapes([
-        { label: 'Anyone available', intent: 'pick_stylist', params: { stylist_id: 'anyone' }, style: 'primary' },
+        ...(service ? stylistChips(stylists, stylistServices, service.id) : []),
         { label: 'Different service', intent: 'book_start', style: 'ghost' },
       ]);
+    }
 
     case 'date':
     case 'reschedule_date':
@@ -258,13 +270,27 @@ export function chipsForNode(
 
 // --- helpers ----------------------------------------------------------------
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function findService(services: CatalogService[], id: unknown): CatalogService | null {
   return services.find((s) => s.id === id) ?? null;
 }
 
 function stylistName(stylists: CatalogStylist[], id: string): string {
-  if (id === 'anyone') return 'Any available stylist';
   return stylists.find((s) => s.id === id)?.name ?? 'Your stylist';
+}
+
+/** One chip per stylist who performs this service. */
+function stylistChips(
+  stylists: CatalogStylist[],
+  map: StylistServiceMap,
+  serviceId: string,
+): Chip[] {
+  return eligibleStylists(stylists, map, serviceId).map((s) => ({
+    label: s.name,
+    intent: 'pick_stylist' as IntentId,
+    params: { stylist_id: s.id },
+  }));
 }
 
 function serviceCard(service: CatalogService, bookable = true): Card {
@@ -401,19 +427,29 @@ function handlePickService(ctx: HandlerContext): HandlerResult {
     serviceName: service.name,
     durationMin: service.duration_min,
     priceLabel: priceLabel(service),
+    // A new service invalidates whoever was drafted for the old one.
+    stylistId: undefined,
+    stylistName: undefined,
   };
+
+  const eligible = eligibleStylists(ctx.stylists, ctx.stylistServices, service.id);
+
+  if (eligible.length === 0) {
+    return deadEnd(
+      `${service.name} isn't bookable through me at the moment. Call us on ${SALON_PHONE} and we'll sort it out.`,
+    );
+  }
+
+  // One stylist means the question has one answer, so asking it is friction.
+  // Assign and move on to dates.
+  if (eligible.length === 1) {
+    return assignStylist(ctx, service, eligible[0], [serviceCard(service, false)]);
+  }
 
   return {
     reply: ctx.modelReply || 'Who would you like to see?',
     cards: [serviceCard(service, false)],
-    chips: withEscapes([
-      { label: 'Anyone available', intent: 'pick_stylist', params: { stylist_id: 'anyone' }, style: 'primary' },
-      ...ctx.stylists.map((s) => ({
-        label: s.name,
-        intent: 'pick_stylist' as IntentId,
-        params: { stylist_id: s.id },
-      })),
-    ]),
+    chips: withEscapes(stylistChips(ctx.stylists, ctx.stylistServices, service.id)),
     node: 'stylist',
   };
 }
@@ -424,19 +460,63 @@ function handlePickStylist(ctx: HandlerContext): HandlerResult {
     return handleBookStart({ ...ctx, modelReply: 'Let me get the service first — what are you booking in for?' });
   }
 
+  const service = findService(ctx.services, draft.serviceId);
+  if (!service) {
+    return handleBookStart({ ...ctx, modelReply: "That service isn't on the menu any more — what else can I book you in for?" });
+  }
+
   const id = String(ctx.params.stylist_id);
-  ctx.session.draft = { ...draft, stylistId: id, stylistName: stylistName(ctx.stylists, id) };
+  const stylist = ctx.stylists.find((s) => s.id === id) ?? null;
+
+  // The model can name a stylist from free text, and a stale widget can send an
+  // old chip, so the pairing is checked here rather than trusted. The booking
+  // API checks it again; this exists so the customer is corrected now instead of
+  // three questions later at the confirm step.
+  if (!stylist || !stylistCanDo(ctx.stylistServices, stylist.id, service.id)) {
+    const who = stylist ? `${stylist.name} doesn't do ${service.name}` : "I couldn't find that stylist";
+    return {
+      reply: `${who}. Here's who can.`,
+      cards: [],
+      chips: withEscapes([
+        ...stylistChips(ctx.stylists, ctx.stylistServices, service.id),
+        { label: 'Different service', intent: 'book_start', style: 'ghost' as const },
+      ]),
+      node: 'stylist',
+    };
+  }
+
+  return assignStylist(ctx, service, stylist, []);
+}
+
+/** Records the chosen stylist on the draft and asks for a day. */
+function assignStylist(
+  ctx: HandlerContext,
+  service: CatalogService,
+  stylist: CatalogStylist,
+  cards: Card[],
+): HandlerResult {
+  ctx.session.draft = {
+    ...ctx.session.draft,
+    stylistId: stylist.id,
+    stylistName: stylist.name,
+  };
+
+  // Offering "different stylist" only makes sense when there is another one who
+  // does this service.
+  const hasAlternative = eligibleStylists(ctx.stylists, ctx.stylistServices, service.id).length > 1;
 
   return {
-    reply: ctx.modelReply || 'Which day suits you?',
-    cards: [],
+    reply: ctx.modelReply || `Which day suits you? You'll be with ${stylist.name}.`,
+    cards,
     chips: withEscapes([
       ...nextBookableDates(6).map((date) => ({
         label: formatDateChip(date),
         intent: 'pick_date' as IntentId,
         params: { date },
       })),
-      { label: 'Different stylist', intent: 'pick_service', params: { service_id: draft.serviceId }, style: 'ghost' as const },
+      hasAlternative
+        ? { label: 'Different stylist', intent: 'pick_service' as IntentId, params: { service_id: service.id }, style: 'ghost' as const }
+        : { label: 'Different service', intent: 'book_start' as IntentId, style: 'ghost' as const },
     ]),
     node: 'date',
   };
@@ -448,7 +528,12 @@ async function handlePickDate(ctx: HandlerContext): Promise<HandlerResult> {
 
   // Rescheduling reuses this handler, so a missing service means the funnel was
   // entered sideways rather than that anything is broken.
-  if (!draft.serviceId || !draft.stylistId) {
+  //
+  // The stylist has to be a real id, not just present: a session that was
+  // already open when stylist eligibility shipped can still be carrying the old
+  // 'anyone' draft, and /api/availability now rejects it. Restarting the funnel
+  // is a better answer than a dead end saying times could not be loaded.
+  if (!draft.serviceId || !draft.stylistId || !UUID_RE.test(draft.stylistId)) {
     return handleBookStart({ ...ctx, modelReply: "Let's start from the top — what are you booking in for?" });
   }
 
@@ -475,6 +560,15 @@ async function handlePickDate(ctx: HandlerContext): Promise<HandlerResult> {
   });
 
   if (!result.ok || !result.data) {
+    // A mismatch is permanent for this pairing, so "try another day" would send
+    // the customer round a loop that cannot end. Every other failure here really
+    // is transient.
+    if (result.code === 'STYLIST_SERVICE_MISMATCH') {
+      return deadEnd(
+        `${draft.stylistName ?? 'That stylist'} doesn't offer ${draft.serviceName ?? 'that service'}, so I can't find times with them. Start a new booking and I'll show you who does.`,
+        'date',
+      );
+    }
     return deadEnd(
       `I couldn't load times just then. Try another day, or call us on ${SALON_PHONE}.`,
       'date',
@@ -826,8 +920,7 @@ async function handleRescheduleStart(ctx: HandlerContext): Promise<HandlerResult
     return deadEnd("That one's already cancelled — shall I book you something new?", 'appointments');
   }
 
-  const serviceId = (target as unknown as { service_id?: string }).service_id;
-  const service = serviceId ? findService(ctx.services, serviceId) : null;
+  const service = findService(ctx.services, target.service_id);
   if (!service) {
     return deadEnd(
       `That service isn't on our list any more, so I can't move it automatically. Please call us on ${SALON_PHONE}.`,
@@ -835,16 +928,31 @@ async function handleRescheduleStart(ctx: HandlerContext): Promise<HandlerResult
     );
   }
 
-  // Reuse the ordinary booking funnel with the stylist pinned: moving an
-  // appointment should keep the same person unless the customer says otherwise.
+  // An appointment booked before eligibility existed can pair a stylist with a
+  // service they do not perform — the old 'anyone' resolver assigned whoever was
+  // free, ignoring the service entirely. /api/availability now refuses that
+  // pairing, so pinning the stylist and offering days would produce a date
+  // picker where every day fails. Say so once, here, instead.
+  if (!stylistCanDo(ctx.stylistServices, target.stylist_id, service.id)) {
+    return deadEnd(
+      `That booking is with a stylist who no longer offers ${service.name}, so I can't move it myself. Please call us on ${SALON_PHONE} and we'll sort it out.`,
+      'appointments',
+    );
+  }
+
+  // Reuse the ordinary booking funnel with the stylist genuinely pinned. This
+  // used to draft 'anyone' while displaying the original stylist's name, so the
+  // times offered were the whole roster's and did not belong to the person the
+  // customer was told they'd be seeing. PATCH /api/appointments keeps the
+  // original stylist regardless, which is exactly what this now asks for.
   ctx.session.draft = {
     rescheduleId: target.id,
     serviceId: service.id,
     serviceName: service.name,
     durationMin: service.duration_min,
     priceLabel: priceLabel(service),
-    stylistId: 'anyone',
-    stylistName: api.unwrapJoin(target.stylists)?.name ?? 'Any available stylist',
+    stylistId: target.stylist_id,
+    stylistName: api.unwrapJoin(target.stylists)?.name ?? 'Your stylist',
   };
 
   return {

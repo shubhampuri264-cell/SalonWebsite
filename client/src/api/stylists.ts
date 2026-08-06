@@ -1,6 +1,12 @@
 import { apiFetch } from './client';
 import type { Stylist } from '@luxe/shared';
 
-export async function getStylists(): Promise<Stylist[]> {
-  return apiFetch<Stylist[]>('/api/stylists');
+/**
+ * Active stylists. Pass a serviceId to get only those who perform it — the
+ * booking wizard always does, so a customer is never offered a stylist the
+ * booking API would reject.
+ */
+export async function getStylists(serviceId?: string): Promise<Stylist[]> {
+  const query = serviceId ? `?service_id=${encodeURIComponent(serviceId)}` : '';
+  return apiFetch<Stylist[]>(`/api/stylists${query}`);
 }

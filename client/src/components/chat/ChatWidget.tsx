@@ -84,8 +84,8 @@ export default function ChatWidget() {
         aria-expanded={open}
         className={
           open
-            ? 'btn-primary fixed bottom-5 right-5 z-40 h-14 w-14 !p-0'
-            : 'btn-primary fixed bottom-5 right-5 z-40 h-14 gap-2.5 !px-5 !py-0 text-[15px]'
+            ? 'btn-primary fixed bottom-5 right-5 z-40 h-14 w-14 p-0!'
+            : 'btn-primary fixed bottom-5 right-5 z-40 h-14 gap-2.5 px-5! py-0! text-[15px]'
         }
       >
         {open ? (
