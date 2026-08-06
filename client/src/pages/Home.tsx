@@ -99,19 +99,25 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Storefront photo — treated to tame the signage + hide the map watermark */}
+          {/* Storefront photo — treated to tame the signage */}
           <div className="animate-rise" style={{ animationDelay: '220ms' }}>
             <div className="relative aspect-4/5 overflow-hidden rounded-3xl shadow-[0_30px_60px_-24px_rgba(78,36,39,0.5)] sm:aspect-5/4 lg:aspect-4/5">
+              {/*
+                The source is portrait, so the 4/5 boxes keep the banner and the
+                shopfront together from a top anchor. The 5/4 box at sm is short
+                enough that a top anchor crops the windows off entirely, hence
+                the centred anchor only there.
+              */}
               <img
-                src="/salonpic.jpg"
+                src="/storefront.jpg"
                 alt="Icon Studio storefront in Sunnyside, Queens"
-                className="h-full w-full object-cover object-top"
+                className="h-full w-full object-cover object-top sm:object-center lg:object-top"
                 loading="eager"
               />
               {/* warm wash to harmonize the loud banner with the brand */}
               <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-[#4E2427]/55 via-transparent to-transparent" aria-hidden="true" />
               <div className="pointer-events-none absolute inset-0 bg-rose-500/10 mix-blend-multiply" aria-hidden="true" />
-              {/* address chip — also covers the map watermark corner */}
+              {/* address chip */}
               <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-xl border border-gold-500/40 bg-background/95 px-3.5 py-2.5 shadow-lg backdrop-blur-sm">
                 <MapPin className="h-4 w-4 shrink-0 text-gold-600" aria-hidden="true" />
                 <span className="text-xs font-medium leading-tight text-foreground">
