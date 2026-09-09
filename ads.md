@@ -16,7 +16,7 @@ carries a `file:line` citation so you can verify it. Anything I could not find i
 | Email | sumipuri34@gmail.com (also the admin account) | `client/src/utils/dates.ts:46`, `supabase/migrations/005_sync_services_to_flyer.sql:26` |
 | Instagram | https://www.instagram.com/sumilovestyle/ | `client/src/utils/dates.ts:47` |
 | TikTok | https://www.tiktok.com/@sumi91_ | `client/src/utils/dates.ts:48` |
-| Hours | 7 days/week, 10:00 AM – 8:00 PM | `packages/shared/src/constants.ts:33-41`, `client/src/utils/dates.ts:32-40` |
+| Hours | 7 days/week, Mon–Sat 10:00 AM – 7:30 PM, Sun 10:00 AM – 6:00 PM | `packages/shared/src/constants.ts:33-41`, `client/src/utils/dates.ts:52-60` |
 | Geo | lat 40.7435241, lng -73.9245996 | embedded in the Google Maps link at `client/src/pages/Location.tsx:47` |
 | Positioning | "Boutique hair salon and threading studio in Sunnyside, Queens" | `client/src/components/layout/Footer.tsx:21` |
 | Production domain | `[TODO: owner to confirm]` — the code reads it from the `CLIENT_URL` env var (`api/_lib/emails.ts:156`), it is not hardcoded anywhere |
@@ -227,7 +227,7 @@ Checklist, in order:
    "39-46 Queens Blvd, Sunnyside, NY 11104", "(718) 255-6940". Google cross-checks this. If your GBP says
    "Icon Studios" (plural, as the maps link at `client/src/pages/Location.tsx:47` suggests) and the site
    says "Icon Studio", pick one and make them identical everywhere.
-4. **Hours: Mon–Sun 10:00 AM – 8:00 PM**, matching `packages/shared/src/constants.ts:33-41`.
+4. **Hours: Mon–Sat 10:00 AM – 7:30 PM, Sun 10:00 AM – 6:00 PM**, matching `packages/shared/src/constants.ts:33-41`.
 5. **Photos — this is where most salons lose.** Upload 25+ to start, then 3–5 new ones every week
    forever. Google's own data shows listings with 100+ photos get several times the direction requests of
    listings with fewer than 10. You already have usable material in `client/public/gallery/`. Categories
@@ -340,9 +340,14 @@ every crawler receives without executing JavaScript. Paste this just before `</h
   "hasMap": "https://www.google.com/maps/place/Icon+studios/@40.7435241,-73.9271745,17z",
   "openingHoursSpecification": [{
     "@type": "OpeningHoursSpecification",
-    "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+    "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
     "opens": "10:00",
-    "closes": "20:00"
+    "closes": "19:30"
+  }, {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": ["Sunday"],
+    "opens": "10:00",
+    "closes": "18:00"
   }],
   "areaServed": [
     { "@type": "Place", "name": "Sunnyside, Queens, NY" },
@@ -405,7 +410,7 @@ Currently `client/index.html:7-8` has a title and description, and nothing else 
 shared link renders as a bare grey box. Replace/extend lines 7–8 with:
 
 ```html
-<meta name="description" content="Icon Studio is a boutique hair salon and eyebrow threading studio at 39-46 Queens Blvd, Sunnyside, Queens. Balayage, keratin, color, threading, waxing, facials and lashes. Open 7 days, 10am-8pm. Book online." />
+<meta name="description" content="Icon Studio is a boutique hair salon and eyebrow threading studio at 39-46 Queens Blvd, Sunnyside, Queens. Balayage, keratin, color, threading, waxing, facials and lashes. Open 7 days, 10am-7:30pm (Sun to 6pm). Book online." />
 <link rel="canonical" href="https://[TODO: owner to confirm domain]/" />
 <meta name="robots" content="index, follow, max-image-preview:large" />
 <meta property="og:type" content="website" />
@@ -557,8 +562,8 @@ whole game.**
 
 *Campaign 1: Local Services (the core, ~60% of budget).* Location targeting: a 3-mile radius around
 39-46 Queens Blvd, set to "presence — people in this location" (NOT "presence or interest," which wastes
-money on tourists searching from elsewhere). Ad schedule: Mon–Sun 9am–8pm, matching your hours
-(`packages/shared/src/constants.ts:33-41`) plus an hour of lead time. Bidding: start Maximize Clicks with a
+money on tourists searching from elsewhere). Ad schedule: Mon–Sun 9am–8pm, covering your hours
+(`packages/shared/src/constants.ts:33-41`) plus lead time either side. Bidding: start Maximize Clicks with a
 $4 cap for the first 3–4 weeks, then switch to Maximize Conversions once you have 15+ tracked bookings.
 
 Ad groups and keywords (phrase and exact match — **avoid broad match entirely at this budget**, it will

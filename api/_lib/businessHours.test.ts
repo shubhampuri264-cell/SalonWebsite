@@ -43,10 +43,19 @@ describe('dayOfWeek', () => {
 });
 
 describe('hoursForDate', () => {
-  it('returns hours for every day — the salon currently opens 7 days a week', () => {
-    for (const date of ['2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07', '2026-08-08', '2026-08-09', '2026-08-10']) {
-      expect(hoursForDate(date), date).toEqual({ open: '10:00', close: '20:00' });
-    }
+  // The salon opens 7 days a week, but Sunday closes earlier than the other
+  // six, so each day is pinned individually rather than asserted as one shared
+  // shape — a single toEqual would have hidden the Sunday case entirely.
+  it.each([
+    ['2026-08-04', '19:30'], // Tuesday
+    ['2026-08-05', '19:30'], // Wednesday
+    ['2026-08-06', '19:30'], // Thursday
+    ['2026-08-07', '19:30'], // Friday
+    ['2026-08-08', '19:30'], // Saturday
+    ['2026-08-09', '18:00'], // Sunday
+    ['2026-08-10', '19:30'], // Monday
+  ])('%s opens 10:00 and closes %s', (date, close) => {
+    expect(hoursForDate(date)).toEqual({ open: '10:00', close });
   });
 });
 
@@ -90,14 +99,14 @@ describe('validateBookingWindow', () => {
   it('rejects a service whose END runs past closing', () => {
     // Starts inside hours; only the duration pushes it over. This is the case
     // a start-time-only check would wrongly accept.
-    expect(baseline({ time: '19:30', durationMin: 180 })).toMatchObject({
+    expect(baseline({ time: '19:00', durationMin: 180 })).toMatchObject({
       ok: false,
       code: 'AFTER_CLOSE',
     });
   });
 
   it('accepts a service that ends exactly at closing', () => {
-    expect(baseline({ time: '19:00', durationMin: 60 })).toEqual({ ok: true });
+    expect(baseline({ time: '18:30', durationMin: 60 })).toEqual({ ok: true });
   });
 
   it('rejects a time that has already passed today', () => {

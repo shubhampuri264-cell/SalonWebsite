@@ -11,13 +11,13 @@ export const SALON_TIMEZONE = Deno.env.get('SALON_TIMEZONE') ?? 'America/New_Yor
 export const BOOKING_HORIZON_DAYS = 180;
 
 export const BUSINESS_HOURS: Record<string, { open: string; close: string } | null> = {
-  Monday: { open: '10:00', close: '20:00' },
-  Tuesday: { open: '10:00', close: '20:00' },
-  Wednesday: { open: '10:00', close: '20:00' },
-  Thursday: { open: '10:00', close: '20:00' },
-  Friday: { open: '10:00', close: '20:00' },
-  Saturday: { open: '10:00', close: '20:00' },
-  Sunday: { open: '10:00', close: '20:00' },
+  Monday: { open: '10:00', close: '19:30' },
+  Tuesday: { open: '10:00', close: '19:30' },
+  Wednesday: { open: '10:00', close: '19:30' },
+  Thursday: { open: '10:00', close: '19:30' },
+  Friday: { open: '10:00', close: '19:30' },
+  Saturday: { open: '10:00', close: '19:30' },
+  Sunday: { open: '10:00', close: '18:00' },
 };
 
 // en-CA's short date format IS ISO 8601, so no reassembly or zero-padding.

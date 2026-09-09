@@ -94,7 +94,7 @@ export default function Home() {
               <div className="hairline" />
               <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4 text-gold-600" aria-hidden="true" />
-                Open 7 days · 10am–8pm · walk-ins welcome
+                Open 7 days · 10am–7:30pm, Sun to 6pm · walk-ins welcome
               </p>
             </div>
           </div>
