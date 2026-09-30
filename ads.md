@@ -13,7 +13,7 @@ carries a `file:line` citation so you can verify it. Anything I could not find i
 | Name | Icon Studio | `client/src/utils/dates.ts:43` |
 | Address | 39-46 Queens Blvd, Sunnyside, NY 11104 | `client/src/utils/dates.ts:44` |
 | Phone | (718) 255-6940 | `client/src/utils/dates.ts:45` |
-| Email | sumipuri34@gmail.com (also the admin account) | `client/src/utils/dates.ts:46`, `supabase/migrations/005_sync_services_to_flyer.sql:26` |
+| Email | ks@iconht.studio (admin login stays sumipuri34@gmail.com) | `client/src/utils/dates.ts:46`, `supabase/migrations/005_sync_services_to_flyer.sql:26` |
 | Instagram | https://www.instagram.com/sumilovestyle/ | `client/src/utils/dates.ts:47` |
 | TikTok | https://www.tiktok.com/@sumi91_ | `client/src/utils/dates.ts:48` |
 | Hours | 7 days/week, Mon–Sat 10:00 AM – 7:30 PM, Sun 10:00 AM – 6:00 PM | `packages/shared/src/constants.ts:33-41`, `client/src/utils/dates.ts:52-60` |
@@ -319,7 +319,7 @@ every crawler receives without executing JavaScript. Paste this just before `</h
   "description": "A boutique hair salon and threading studio in Sunnyside, Queens. Precision cuts, balayage, color, eyebrow threading, waxing, facials and lash extensions. Open 7 days, walk-ins welcome.",
   "url": "https://[TODO: owner to confirm domain]/",
   "telephone": "+17182556940",
-  "email": "sumipuri34@gmail.com",
+  "email": "ks@iconht.studio",
   "image": "https://[TODO: owner to confirm domain]/salonpic.png",
   "logo": "https://[TODO: owner to confirm domain]/favicon.svg",
   "priceRange": "$$",

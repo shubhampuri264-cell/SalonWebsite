@@ -216,13 +216,29 @@ export async function sendPasswordResetEmail(toEmail: string, actionLink: string
   await sendOne(resend, 'password_reset', toEmail, 'Reset your Icon Studio password', html);
 }
 
+const DEFAULT_OWNER_INBOX = 'ks@iconht.studio';
+
+/**
+ * The inbox for owner-facing mail: new-booking notices and contact-form
+ * messages.
+ *
+ * Deliberately separate from OWNER_EMAIL, which is the admin login (see ./auth)
+ * and stays on the owner's personal Gmail. Notices used to go there too, and on
+ * 2026-09-30 they were all accepted by Resend yet never seen: that Gmail was
+ * linked to the business inbox only as a "Send mail as" alias, which sends from
+ * it but never brings its mail in.
+ */
+function ownerInbox(): string {
+  // `||`, not `??`: a key saved empty in the Vercel dashboard is '' and must
+  // still fall back rather than send to nobody.
+  return unquote(process.env.OWNER_NOTIFY_EMAIL) || DEFAULT_OWNER_INBOX;
+}
+
 export async function sendOwnerNotificationEmail(
   appointment: AppointmentEmailData,
   serviceName: string,
   stylistName: string,
 ): Promise<void> {
-  const ownerEmail = unquote(process.env.OWNER_EMAIL);
-  if (!ownerEmail) return;
   const resend = await getResend();
   if (!resend) return;
   const dateTimeStr = formatDateTime(appointment.appointment_date, appointment.appointment_time);
@@ -230,7 +246,7 @@ export async function sendOwnerNotificationEmail(
   await sendOne(
     resend,
     'owner_notification',
-    ownerEmail,
+    ownerInbox(),
     safeSubject(`New Booking: ${appointment.client_name} — ${dateTimeStr}`),
     html,
   );
@@ -539,30 +555,25 @@ function buildContactHtml(msg: ContactMessage): string {
 }
 
 /**
- * Website contact-form message, delivered to OWNER_EMAIL.
+ * Website contact-form message, delivered to the owner inbox.
  *
- * Returns false when OWNER_EMAIL or RESEND_API_KEY is unset, so the endpoint
- * can tell the sender to phone instead. Reporting success while dropping the
- * message is the exact failure this endpoint replaces — the old form handed
- * off to `mailto:`, which silently loses the message on any device without a
- * registered mail handler.
+ * Returns false when RESEND_API_KEY is not set, so the endpoint can tell the
+ * sender to phone instead. Reporting success while dropping the message is the
+ * exact failure this endpoint replaces — the old form handed off to `mailto:`,
+ * which silently loses the message on any device without a registered mail
+ * handler.
  *
  * replyTo is the sender's address so the owner can just hit reply; From stays
  * the verified domain sender, because putting an arbitrary visitor address in
  * From fails DMARC and lands the mail in spam.
  */
 export async function sendContactMessageEmail(msg: ContactMessage): Promise<boolean> {
-  const ownerEmail = unquote(process.env.OWNER_EMAIL);
-  if (!ownerEmail) {
-    console.error('[Email] OWNER_EMAIL is not set — contact form message cannot be delivered');
-    return false;
-  }
   const resend = await getResend();
   if (!resend) return false;
   await sendOne(
     resend,
     'contact',
-    ownerEmail,
+    ownerInbox(),
     safeSubject(`Website enquiry from ${msg.name}`),
     buildContactHtml(msg),
     msg.email,

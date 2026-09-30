@@ -71,9 +71,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       message,
     });
     if (!delivered) {
-      // OWNER_EMAIL or RESEND_API_KEY is unset. Misconfiguration, not the
-      // visitor's fault — but never claim success, or the message vanishes
-      // exactly the way the mailto: version did.
+      // RESEND_API_KEY is not set. Misconfiguration, not the visitor's fault —
+      // but never claim success, or the message vanishes exactly the way the
+      // mailto: version did.
       await captureError(new Error('Contact form could not deliver: email sending not configured'), {
         fingerprint: 'api:contact:not-configured',
         tags: { endpoint: 'POST /api/contact' },

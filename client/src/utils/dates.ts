@@ -63,7 +63,7 @@ export const SALON_INFO = {
   name: 'Icon Studio',
   address: '39-46 Queens Blvd, Sunnyside, NY 11104',
   phone: '(718) 255-6940',
-  email: 'sumipuri34@gmail.com',
+  email: 'ks@iconht.studio',
   instagram: 'https://www.instagram.com/sumilovestyle/',
   tiktok: 'https://www.tiktok.com/@sumi91_',
 } as const;
