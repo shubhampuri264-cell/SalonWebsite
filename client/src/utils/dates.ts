@@ -39,6 +39,13 @@ export function salonToday(now: Date = new Date()): string {
   }).format(now);
 }
 
+/** A Date's local calendar day as YYYY-MM-DD, without converting to UTC. */
+export function toDateStr(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
 /** Check if the salon is open on a given JS Date */
 export function isSalonOpen(date: Date): boolean {
   const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });

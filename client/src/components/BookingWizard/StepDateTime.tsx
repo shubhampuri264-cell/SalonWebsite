@@ -2,7 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { getAvailability } from '@/api/availability';
 import { useBookingStore } from '@/store/bookingStore';
-import { isSalonOpen, formatTime, formatDate } from '@/utils/dates';
+import {
+  isSalonOpen,
+  formatTime,
+  formatDate,
+  salonToday,
+  toDateStr,
+} from '@/utils/dates';
 import { cn } from '@/utils/cn';
 import { supabase } from '@/api/supabase';
 
@@ -23,9 +29,14 @@ export default function StepDateTime() {
   const [slots, setSlots] = useState<{ time: string }[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState<string | null>(null);
+  // Server's reason for an empty grid (past date, beyond horizon, closed day).
+  const [slotsMessage, setSlotsMessage] = useState<string | null>(null);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // "Today" is the salon's day, not the visitor's: late evening on the West
+  // Coast it is already tomorrow in New York.
+  const today = new Date(salonToday() + 'T00:00:00');
+  const lastDay = new Date(today);
+  lastDay.setDate(lastDay.getDate() + 180); // match BOOKING_HORIZON_DAYS in api/_lib/businessHours.ts
 
   const selectedDateObj = selectedDate
     ? new Date(selectedDate + 'T12:00:00')
@@ -50,14 +61,22 @@ export default function StepDateTime() {
       setSlotsError(null);
       if (showSpinner) setLoadingSlots(true);
 
+      // The customer may have picked another day while this request was in
+      // flight. A late response for the old day must not overwrite the new
+      // day's slots or reset the store back to the old date.
+      const isStale = () =>
+        useBookingStore.getState().selectedDate !== selectedDate;
+
       getAvailability({
         date: selectedDate,
         service_id: selectedService.id,
         stylist_id: stylistId,
       })
         .then((res) => {
+          if (isStale()) return;
           const newSlots = res.slots ?? [];
           setSlots(newSlots);
+          setSlotsMessage(res.message ?? null);
 
           // If the currently selected time was taken by another user during this
           // refresh, clear it so they cannot accidentally submit a stale slot.
@@ -66,9 +85,12 @@ export default function StepDateTime() {
             useBookingStore.getState().setDateTime(selectedDate, '');
           }
         })
-        .catch((e) => setSlotsError(e.message))
+        .catch((e) => {
+          if (!isStale()) setSlotsError(e.message);
+        })
         .finally(() => {
-          if (showSpinner) setLoadingSlots(false);
+          // A stale request leaves the spinner to the request that replaced it.
+          if (showSpinner && !isStale()) setLoadingSlots(false);
         });
     },
     [selectedDate, selectedService, stylistId]
@@ -111,7 +133,7 @@ export default function StepDateTime() {
 
   const handleDaySelect = (day: Date | undefined) => {
     if (!day) return;
-    const dateStr = day.toISOString().slice(0, 10);
+    const dateStr = toDateStr(day);
     // Reset time when date changes
     if (dateStr !== selectedDate) {
       setDateTime(dateStr, '');
@@ -141,8 +163,12 @@ export default function StepDateTime() {
             mode="single"
             selected={selectedDateObj}
             onSelect={handleDaySelect}
+            today={today}
+            startMonth={today}
+            endMonth={lastDay}
             disabled={[
               { before: today },
+              { after: lastDay },
               (date) => !isSalonOpen(date),
             ]}
             showOutsideDays={false}
@@ -203,7 +229,8 @@ export default function StepDateTime() {
 
           {selectedDate && !loadingSlots && !slotsError && slots.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              No availability on this date. Please choose another day.
+              {slotsMessage ?? 'No availability on this date'}. Please choose
+              another day.
             </p>
           )}
 
