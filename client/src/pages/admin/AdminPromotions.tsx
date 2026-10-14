@@ -46,13 +46,14 @@ function formatRange(p: Promotion): string {
   return p.ends_on ? `${fmt(p.starts_on)} – ${fmt(p.ends_on)}` : `From ${fmt(p.starts_on)}`;
 }
 
-function validate(state: EditState): string | null {
+/** A blank start date means today, in both the add and the edit form. */
+function validate(state: EditState, today: string): string | null {
   if (state.title.trim().length < 2) return 'Title must be at least 2 characters';
   if (state.title.trim().length > 120) return 'Title must be 120 characters or fewer';
   if (state.offer_text.trim().length < 2) return 'Offer text is required';
   if (state.offer_text.trim().length > 200) return 'Offer text must be 200 characters or fewer';
   if (state.description.length > 500) return 'Description must be 500 characters or fewer';
-  if (state.starts_on && state.ends_on && state.ends_on < state.starts_on) {
+  if (state.ends_on && state.ends_on < (state.starts_on || today)) {
     return 'The end date cannot be before the start date';
   }
   return null;
@@ -99,7 +100,7 @@ export default function AdminPromotions() {
   };
 
   const saveEdit = async (id: string) => {
-    const problem = validate(editState);
+    const problem = validate(editState, today);
     if (problem) { setEditError(problem); return; }
 
     setEditError(null);
@@ -109,7 +110,8 @@ export default function AdminPromotions() {
         title: editState.title.trim(),
         offer_text: editState.offer_text.trim(),
         description: editState.description.trim() || null,
-        starts_on: editState.starts_on,
+        // Clearing the start date used to send '' and fail validation.
+        starts_on: editState.starts_on || today,
         ends_on: editState.ends_on || null,
       }, token);
       setPromotions((prev) => prev.map((p) => (p.id === id ? updated : p)));
@@ -131,7 +133,7 @@ export default function AdminPromotions() {
   };
 
   const handleAdd = async () => {
-    const problem = validate(addState);
+    const problem = validate(addState, today);
     if (problem) { setAddError(problem); return; }
 
     setAddError(null);
@@ -141,8 +143,8 @@ export default function AdminPromotions() {
         title: addState.title.trim(),
         offer_text: addState.offer_text.trim(),
         description: addState.description.trim() || null,
-        // Blank dates are omitted so the column defaults apply: starts_on
-        // becomes today, ends_on stays NULL (open-ended).
+        // Blank dates are omitted: the API starts the offer today (New York
+        // date) and leaves ends_on NULL (open-ended).
         ...(addState.starts_on ? { starts_on: addState.starts_on } : {}),
         ...(addState.ends_on ? { ends_on: addState.ends_on } : {}),
       }, token);
@@ -173,8 +175,8 @@ export default function AdminPromotions() {
         <div>
           <h1 className="font-serif text-3xl font-semibold">Promotions</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Offers shown on the site and quoted word-for-word by Iris. Write the offer exactly as
-            customers should read it.
+            Offers Iris shows under “Current offers”, quoted word for word. Write the offer exactly
+            as customers should read it.
           </p>
         </div>
         <button
@@ -282,7 +284,7 @@ export default function AdminPromotions() {
             {promotions.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                  No promotions yet. Add one and it appears on the site straight away.
+                  No promotions yet. Add one and Iris shows it straight away.
                 </td>
               </tr>
             )}

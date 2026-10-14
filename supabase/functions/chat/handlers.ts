@@ -347,6 +347,8 @@ export async function handle(intent: IntentId, ctx: HandlerContext): Promise<Han
     case 'my_appointments':
       return handleMyAppointments(ctx);
     case 'cancel_appointment':
+      return handleCancelAsk(ctx);
+    case 'cancel_confirm':
       return handleCancelAppointment(ctx);
     case 'reschedule_start':
       return handleRescheduleStart(ctx);
@@ -845,19 +847,25 @@ async function handleMyAppointments(ctx: HandlerContext): Promise<HandlerResult>
 }
 
 /**
- * Cancels through the customer's OWN appointment list.
+ * Finds the appointment to cancel in the customer's OWN appointment list.
  *
  * The list endpoint is scoped to `user_id = auth.uid()` server-side, so an
  * appointment id belonging to someone else simply is not in it and the
  * cancellation token is never obtained. Passing an arbitrary id here therefore
  * fails as "not found" rather than cancelling a stranger's booking — the check
  * is structural, not a comparison this file could get wrong.
+ *
+ * Returns either the appointment or the reply to send instead.
  */
-async function handleCancelAppointment(ctx: HandlerContext): Promise<HandlerResult> {
+async function findCancellable(
+  ctx: HandlerContext,
+): Promise<{ target: api.CustomerAppointment } | { result: HandlerResult }> {
   if (!ctx.customerToken) {
-    return requireSignIn(
-      "To cancel I'll need you signed in — or use the cancellation link in your confirmation email.",
-    );
+    return {
+      result: requireSignIn(
+        "To cancel I'll need you signed in — or use the cancellation link in your confirmation email.",
+      ),
+    };
   }
 
   const list = await api.getCustomerAppointments({
@@ -865,17 +873,58 @@ async function handleCancelAppointment(ctx: HandlerContext): Promise<HandlerResu
     clientIp: ctx.clientIp,
   });
   if (!list.ok || !list.data) {
-    if (list.status === 401) return requireSignIn('Your session has expired — sign in again to cancel.');
-    return deadEnd("I couldn't reach your appointments just then. Please try again shortly.");
+    if (list.status === 401) {
+      return { result: requireSignIn('Your session has expired — sign in again to cancel.') };
+    }
+    return { result: deadEnd("I couldn't reach your appointments just then. Please try again shortly.") };
   }
 
   const target = list.data.find((a) => a.id === ctx.params.appointment_id);
   if (!target) {
-    return deadEnd("I couldn't find that appointment on your account.", 'appointments');
+    return { result: deadEnd("I couldn't find that appointment on your account.", 'appointments') };
   }
   if (target.status === 'cancelled') {
-    return { ...(await handleMyAppointments(ctx)), reply: "That one's already cancelled." };
+    return { result: { ...(await handleMyAppointments(ctx)), reply: "That one's already cancelled." } };
   }
+  return { target };
+}
+
+/**
+ * The Cancel button on an appointment card. Asks first, the same way a move
+ * does — a cancel has no undo, and one mistaken tap used to be enough.
+ *
+ * The intent keeps its old name because the button that sends it is part of
+ * the website bundle (ChatCards.tsx). Putting the destructive step on a NEW
+ * intent instead means this ships with an Iris deploy alone, and a page loaded
+ * before that deploy gets the question too.
+ */
+async function handleCancelAsk(ctx: HandlerContext): Promise<HandlerResult> {
+  const found = await findCancellable(ctx);
+  if ('result' in found) return found.result;
+  const { target } = found;
+
+  const serviceName = api.unwrapJoin(target.services)?.name ?? 'appointment';
+  const when = `${formatDateLabel(target.appointment_date)} at ${formatTimeLabel(target.appointment_time)}`;
+  return {
+    reply: `Cancel your ${serviceName} on ${when}?`,
+    cards: [],
+    chips: withEscapes([
+      {
+        label: 'Yes, cancel it',
+        intent: 'cancel_confirm',
+        params: { appointment_id: target.id },
+        style: 'primary',
+      },
+      { label: 'Keep it', intent: 'my_appointments', style: 'ghost' },
+    ]),
+    node: 'appointments',
+  };
+}
+
+async function handleCancelAppointment(ctx: HandlerContext): Promise<HandlerResult> {
+  const found = await findCancellable(ctx);
+  if ('result' in found) return found.result;
+  const { target } = found;
 
   const cancelled = await api.cancelByToken({
     token: target.cancellation_token,

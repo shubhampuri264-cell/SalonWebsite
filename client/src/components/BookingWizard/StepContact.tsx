@@ -72,6 +72,10 @@ export default function StepContact() {
         setSubmitError(
           'This time slot was just taken. Please go back and choose a different time.'
         );
+      } else if (err instanceof ApiError && err.status === 429) {
+        // Both 429s carry customer-ready copy: the daily per-customer cap names
+        // the salon's phone number, the per-IP limit asks them to wait.
+        setSubmitError(err.message);
       } else {
         setSubmitError('Something went wrong. Please try again.');
       }
@@ -194,8 +198,8 @@ export default function StepContact() {
             aria-invalid={!!errors.terms}
           />
           <label htmlFor="terms" className="text-sm text-muted-foreground">
-            I agree to the cancellation policy. Appointments cancelled less than 24 hours
-            in advance may be subject to a late cancellation fee.
+            I agree to the cancellation policy. Please cancel at least 24 hours in advance
+            if you can, so we can offer the time to someone else.
           </label>
         </div>
         {errors.terms && (

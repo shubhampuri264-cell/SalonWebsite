@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { checkRateLimit, enforceRateLimit } from './_lib/ratelimit';
 import { sendContactMessageEmail } from './_lib/emails';
 import { captureError } from './_lib/sentry';
+import { rateLimitIdentity } from './_lib/auth';
 
 // Website contact form.
 //
@@ -38,8 +39,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Layer 1: per-IP throttle, before any parsing or mail work.
-  if (!(await enforceRateLimit(req, res, 'contact'))) return;
+  // Layer 1: per-IP throttle, before any parsing or mail work. Keyed on the
+  // visitor's own IP when Iris relays the message, or every chat user would
+  // share one 3-an-hour bucket.
+  if (!(await enforceRateLimit(req, res, 'contact', rateLimitIdentity(req)))) return;
 
   const parsed = bodySchema.safeParse(req.body);
   if (!parsed.success) {

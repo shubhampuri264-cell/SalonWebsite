@@ -43,8 +43,8 @@ const GALLERY_PREVIEW = [
 const FEATURES = [
   { icon: Scissors, title: 'Expert Stylists', desc: 'A team specializing in color, cuts, and threading with years of experience.' },
   { icon: Star, title: 'Boutique Experience', desc: 'A warm, personal atmosphere where every client is the priority.' },
-  { icon: CalendarCheck, title: 'Online Booking', desc: 'Book, reschedule, or cancel 24/7 — no phone calls needed.' },
-  { icon: Clock, title: 'Open 7 Days', desc: 'Every day, 10am to 8pm — appointments and walk-ins welcome.' },
+  { icon: CalendarCheck, title: 'Online Booking', desc: 'Book or cancel online 24/7. Signed in? Iris can move your booking too.' },
+  { icon: Clock, title: 'Open 7 Days', desc: 'Mon–Sat 10am to 7:30pm, Sun to 6pm — appointments and walk-ins welcome.' },
 ];
 
 export default function Home() {
@@ -240,7 +240,7 @@ export default function Home() {
               Ready for your transformation?
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Book online in under two minutes — reschedule or cancel anytime.
+              Book online in under two minutes — cancel anytime from your confirmation email.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link to="/book" className="btn-primary">Book your appointment</Link>

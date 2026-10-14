@@ -32,6 +32,7 @@ export const INTENT_IDS = [
   // Account
   'my_appointments',
   'cancel_appointment',
+  'cancel_confirm',
   'reschedule_start',
   'reschedule_confirm',
 
@@ -65,8 +66,9 @@ export const intentIdSchema = z.enum(INTENT_IDS);
  *     They come from real form fields, so the model never handles the values and
  *     a hallucinated email address can never be submitted.
  *
- *   cancel_appointment — destructive. Same reasoning as confirm_booking: it is a
- *     button on the customer's own appointment card.
+ *   cancel_appointment, cancel_confirm — the Cancel button on the customer's
+ *     own appointment card, and the "Yes, cancel it" chip it leads to. Only
+ *     cancel_confirm cancels anything; same reasoning as confirm_booking.
  *
  * The model can still *route* to the screens these live on (my_appointments,
  * escalate), which is the useful half without the dangerous half.
@@ -129,6 +131,7 @@ export const INTENT_PARAMS = {
   submit_contact: contactSchema,
   confirm_booking: z.object({ pending_id: uuid }),
   cancel_appointment: z.object({ appointment_id: uuid }),
+  cancel_confirm: z.object({ appointment_id: uuid }),
   reschedule_start: z.object({ appointment_id: uuid }),
   reschedule_confirm: z.object({
     appointment_id: uuid,

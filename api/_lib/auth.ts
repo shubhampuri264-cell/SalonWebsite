@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import type { VercelRequest } from '@vercel/node';
 import { supabaseAdmin } from './supabase';
 import { envValue } from './env';
 
@@ -51,4 +52,24 @@ export function verifyInternalCaller(tokenHeader: string | string[] | undefined)
   // Length is not secret; the secret's bytes are.
   if (expectedBytes.length !== receivedBytes.length) return false;
   return crypto.timingSafeEqual(expectedBytes, receivedBytes);
+}
+
+/**
+ * Rate-limit key for a request that may have been relayed by Iris.
+ *
+ * Requests relayed by the Iris Edge Function all arrive from Supabase's egress
+ * addresses, so keying on the socket IP would put every customer using the chat
+ * into a single shared bucket — the tenth booking of the hour across all of
+ * them would 429, which looks exactly like a broken feature. When the caller
+ * proves it is our own function, trust the end-user IP it forwards instead.
+ *
+ * The internal token authenticates the *service*, not the customer, and is used
+ * here only to choose a rate-limit bucket. It grants no access to anything.
+ * Returning undefined falls back to the socket IP.
+ */
+export function rateLimitIdentity(req: VercelRequest): string | undefined {
+  if (!verifyInternalCaller(req.headers['x-internal-token'])) return undefined;
+  const forwarded = req.headers['x-client-ip'];
+  const ip = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+  return ip ? `iris:${ip}` : undefined;
 }

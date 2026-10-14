@@ -445,7 +445,9 @@ export async function rescheduleAppointment(input: {
 
   const { data: updated, error: updateError } = await supabaseAdmin
     .from('appointments')
-    .update({ appointment_date: newDate, appointment_time: newTime })
+    // reminder_sent is cleared because the reminder belonged to the old date.
+    // The cron only ever looks at tomorrow, so this cannot cause a repeat.
+    .update({ appointment_date: newDate, appointment_time: newTime, reminder_sent: false })
     .eq('id', existing.id)
     // Re-assert both in the WHERE clause. Between the checks above and this
     // write the row could have been cancelled by the customer's own emailed

@@ -5,7 +5,7 @@ import { enforceRateLimit } from './_lib/ratelimit';
 import { sendCancellationEmail } from './_lib/emails';
 import { captureError } from './_lib/sentry';
 import { createAppointment, extractUserId, rescheduleAppointment } from './_lib/booking';
-import { verifyInternalCaller } from './_lib/auth';
+import { rateLimitIdentity } from './_lib/auth';
 
 const createSchema = z.object({
   // A concrete stylist, always. The old 'anyone' member let the server pick a
@@ -39,27 +39,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   return res.status(405).json({ error: 'Method not allowed' });
 }
 
-/**
- * Rate-limit key for this request.
- *
- * Requests relayed by the Iris Edge Function all arrive from Supabase's egress
- * addresses, so keying on the socket IP would put every customer using the chat
- * into a single shared bucket — the tenth booking of the hour across all of
- * them would 429, which looks exactly like a broken feature. When the caller
- * proves it is our own function, trust the end-user IP it forwards instead.
- *
- * The internal token authenticates the *service*, not the customer, and is used
- * here only to choose a rate-limit bucket. It grants no access to anything: the
- * endpoints below still resolve identity from the customer's own Bearer token.
- * Returning undefined falls back to the socket IP.
- */
-function rateLimitIdentity(req: VercelRequest): string | undefined {
-  if (!verifyInternalCaller(req.headers['x-internal-token'])) return undefined;
-  const forwarded = req.headers['x-client-ip'];
-  const ip = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-  return ip ? `iris:${ip}` : undefined;
-}
-
+// Rate limits use rateLimitIdentity so Iris customers each get their own
+// bucket. Identity for anything touching an appointment still comes from the
+// customer's own Bearer token, never from the relay.
 async function handleCreate(req: VercelRequest, res: VercelResponse) {
   if (!(await enforceRateLimit(req, res, 'booking', rateLimitIdentity(req)))) return;
 

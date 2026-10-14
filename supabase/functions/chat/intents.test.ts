@@ -21,6 +21,7 @@ Deno.test('the model cannot propose an intent that writes or mails', () => {
     'confirm_booking',
     'reschedule_confirm',
     'cancel_appointment',
+    'cancel_confirm',
     'submit_contact',
     'contact_salon',
   ];

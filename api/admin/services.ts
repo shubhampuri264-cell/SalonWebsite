@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { supabaseAdmin } from '../_lib/supabase';
 import { verifyAdminAuth } from '../_lib/auth';
 import { enforceRateLimit } from '../_lib/ratelimit';
+import { salonToday } from '../_lib/dates';
 
 const SERVICE_CATEGORIES = ['hair', 'threading', 'facial', 'waxing', 'special_treatment'] as const;
 
@@ -190,9 +191,10 @@ async function promotionsPost(req: VercelRequest, res: VercelResponse) {
       title,
       description: description ?? null,
       offer_text,
-      // Let the column defaults apply when the owner leaves the dates blank:
-      // starts_on defaults to today, ends_on to NULL (open-ended).
-      ...(starts_on ? { starts_on } : {}),
+      // A blank start means today in New York. Not the column default: that is
+      // CURRENT_DATE, the UTC date, so an offer saved in the evening started
+      // "tomorrow" and showed as Scheduled. A blank end stays NULL (open-ended).
+      starts_on: starts_on || salonToday(),
       ...(ends_on !== undefined ? { ends_on } : {}),
       is_active: true,
     })

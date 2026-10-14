@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import CustomerAuthModal from '@/components/auth/CustomerAuthModal';
 import { useCustomerAuthStore } from '@/store/customerAuthStore';
 
 interface ContactFormProps {
@@ -199,20 +199,28 @@ export default function ContactForm({ mode, disabled, onSubmit }: ContactFormPro
  * address to "look up" a booking: an assistant that confirms whether an
  * appointment exists for an arbitrary address is an enumeration oracle, which
  * is exactly what the password-reset flow is written to avoid.
+ *
+ * The sign-in dialog opens right here rather than behind a link: /profile sends
+ * a signed-out visitor straight back to the home page. It renders inside the
+ * Iris panel on purpose — the panel's focus trap would pull keyboard focus back
+ * out of a dialog portalled anywhere else.
  */
 export function SignInCard() {
+  const [authOpen, setAuthOpen] = useState(false);
   return (
     <div className="card-lux bg-white p-3.5">
       <h3 className="mb-1.5 font-serif text-[15px] font-semibold">Sign in to see your appointments</h3>
       <p className="mb-3 text-xs text-muted-foreground">
         Or use the cancellation link in your confirmation email, or give the salon a call.
       </p>
-      <Link
-        to="/profile"
+      <button
+        type="button"
+        onClick={() => setAuthOpen(true)}
         className="inline-flex w-full items-center justify-center rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-rose-600"
       >
         Sign in
-      </Link>
+      </button>
+      {authOpen && <CustomerAuthModal onClose={() => setAuthOpen(false)} />}
     </div>
   );
 }
