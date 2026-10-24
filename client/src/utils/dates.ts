@@ -52,6 +52,19 @@ export function isSalonOpen(date: Date): boolean {
   return BUSINESS_HOURS[dayName] !== null;
 }
 
+/** Check if a JS Date falls on one of a stylist's weekly days off */
+export function isDayOff(date: Date, daysOff: readonly string[]): boolean {
+  return daysOff.includes(date.toLocaleDateString('en-US', { weekday: 'long' }));
+}
+
+/** ['Friday'] -> "Fridays"; ['Monday', 'Friday'] -> "Mondays and Fridays" */
+export function formatDaysOff(daysOff: readonly string[]): string {
+  const plural = daysOff.map((day) => `${day}s`);
+  return plural.length > 1
+    ? `${plural.slice(0, -1).join(', ')} and ${plural[plural.length - 1]}`
+    : plural.join('');
+}
+
 /**
  * Business hours displayed on the Location page.
  * Returns an array of { day, hours } pairs for the hours table.

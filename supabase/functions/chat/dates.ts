@@ -108,13 +108,28 @@ export function isBookableDate(dateStr: string, today: string = salonToday()): b
   return hoursForDate(dateStr) !== null;
 }
 
-/** The next `count` bookable dates from `today` inclusive. */
-export function nextBookableDates(count: number, today: string = salonToday()): string[] {
+/**
+ * The next `count` bookable dates from `today` inclusive, skipping the
+ * stylist's weekly days off (stylists.days_off, migration 020).
+ */
+export function nextBookableDates(
+  count: number,
+  daysOff: readonly string[] = [],
+  today: string = salonToday(),
+): string[] {
   const dates: string[] = [];
   let cursor = today;
   for (let i = 0; i < count * 3 && dates.length < count; i++) {
-    if (isBookableDate(cursor, today)) dates.push(cursor);
+    if (isBookableDate(cursor, today) && !daysOff.includes(dayOfWeek(cursor))) dates.push(cursor);
     cursor = addDays(cursor, 1);
   }
   return dates;
+}
+
+/** ['Friday'] -> "Fridays"; ['Monday', 'Friday'] -> "Mondays and Fridays". Same as the website's. */
+export function formatDaysOff(daysOff: readonly string[]): string {
+  const plural = daysOff.map((day) => `${day}s`);
+  return plural.length > 1
+    ? `${plural.slice(0, -1).join(', ')} and ${plural[plural.length - 1]}`
+    : plural.join('');
 }

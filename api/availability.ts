@@ -5,7 +5,13 @@ import { generateAvailableSlots } from './_lib/timeSlots';
 import { captureError } from './_lib/sentry';
 import { salonToday, salonNowMinutes, addDays } from './_lib/dates';
 import { stylistPerformsService } from './_lib/eligibility';
-import { hoursForDate, BOOKING_HORIZON_DAYS, MIN_LEAD_MINUTES } from './_lib/businessHours';
+import {
+  hoursForDate,
+  isDayOff,
+  dayOfWeek,
+  BOOKING_HORIZON_DAYS,
+  MIN_LEAD_MINUTES,
+} from './_lib/businessHours';
 
 const querySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date (YYYY-MM-DD)'),
@@ -56,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { data: stylist } = await supabaseAdmin
     .from('stylists')
-    .select('id')
+    .select('id, title, days_off')
     .eq('id', stylist_id)
     .eq('is_active', true)
     .maybeSingle();
@@ -73,6 +79,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({
       error: 'That stylist does not offer this service',
       code: 'STYLIST_SERVICE_MISMATCH',
+    });
+  }
+
+  // The booking write path refuses these days too (findFreeStylists).
+  if (isDayOff(stylist.days_off, date)) {
+    return res.json({
+      slots: [],
+      message: `Our ${stylist.title.toLowerCase()} is not available for appointments on ${dayOfWeek(date)}s`,
     });
   }
 

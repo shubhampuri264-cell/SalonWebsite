@@ -18,6 +18,8 @@ export interface Stylist {
    * server-side — ask GET /api/stylists?service_id=… rather than reading this.
    */
   specialties: string[];
+  /** Weekdays never bookable with this stylist, e.g. ['Friday'] (migration 020). */
+  days_off: string[];
   years_exp: number;
   image_url: string | null;
   is_active: boolean;

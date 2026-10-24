@@ -104,7 +104,10 @@ export const useBookingStore = create<BookingState>()(
       // the chosen service — neither is representable any more, and restoring
       // one leaves the wizard on a step it cannot submit from. Nothing useful
       // can be salvaged, so those sessions start again.
-      version: 2,
+      //
+      // Bumped again for stylist days off (migration 020): an older session's
+      // stylist has no days_off and may already hold one of those dates.
+      version: 3,
       migrate: () => ({
         currentStep: 0 as const,
         selectedService: null,

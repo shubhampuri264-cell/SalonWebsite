@@ -17,7 +17,7 @@ import { supabaseAdmin } from './supabase';
 import { captureError } from './sentry';
 import { isSlotFree } from './timeSlots';
 import { stylistPerformsService } from './eligibility';
-import { validateBookingWindow, type BookingWindowErrorCode } from './businessHours';
+import { validateBookingWindow, isDayOff, type BookingWindowErrorCode } from './businessHours';
 import { salonToday, salonNowMinutes } from './dates';
 import {
   checkIdentifierLimit,
@@ -553,6 +553,10 @@ export async function extractUserId(authHeader: string | undefined): Promise<str
  * returned that stylist as free. It also never consulted blocked_slots, so
  * vacation days were bookable. Both rules now live in isSlotFree, shared with
  * GET /api/availability.
+ *
+ * A stylist's weekly days off (stylists.days_off, migration 020) are checked
+ * here rather than in createAppointment so the reschedule path, which never
+ * looks the stylist up, is held to the same rule.
  */
 export async function findFreeStylists(
   stylistIds: string[],
@@ -579,16 +583,20 @@ export async function findFreeStylists(
     appointmentsQuery = appointmentsQuery.neq('id', excludeAppointmentId);
   }
 
-  const [appointments, blocked] = await Promise.all([
+  const [appointments, blocked, stylists] = await Promise.all([
     appointmentsQuery,
     supabaseAdmin
       .from('blocked_slots')
       .select('stylist_id, start_time, end_time')
       .in('stylist_id', stylistIds)
       .eq('blocked_date', date),
+    supabaseAdmin
+      .from('stylists')
+      .select('id, days_off')
+      .in('id', stylistIds),
   ]);
 
-  const queryError = appointments.error ?? blocked.error;
+  const queryError = appointments.error ?? blocked.error ?? stylists.error;
   if (queryError) {
     await captureError(queryError, {
       fingerprint: 'api:appointments:availability-check',
@@ -598,7 +606,12 @@ export async function findFreeStylists(
     return null;
   }
 
+  const offToday = new Set(
+    (stylists.data ?? []).filter((s) => isDayOff(s.days_off, date)).map((s) => s.id),
+  );
+
   return stylistIds.filter((id) =>
+    !offToday.has(id) &&
     isSlotFree({
       startTime: time,
       durationMin,

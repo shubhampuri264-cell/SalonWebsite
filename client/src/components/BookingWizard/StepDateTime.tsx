@@ -4,6 +4,8 @@ import { getAvailability } from '@/api/availability';
 import { useBookingStore } from '@/store/bookingStore';
 import {
   isSalonOpen,
+  isDayOff,
+  formatDaysOff,
   formatTime,
   formatDate,
   salonToday,
@@ -43,6 +45,7 @@ export default function StepDateTime() {
     : undefined;
 
   const stylistId = selectedStylist?.id ?? null;
+  const daysOff = selectedStylist?.days_off ?? [];
 
   // Back skips the stylist step when it was skipped on the way in — with one
   // eligible stylist there is nothing there to change.
@@ -155,6 +158,12 @@ export default function StepDateTime() {
           ? `Select your preferred date, then choose a time with ${selectedStylist.name}.`
           : 'Select your preferred date, then choose an available time slot.'}
       </p>
+      {selectedStylist && daysOff.length > 0 && (
+        <p className="mt-4 rounded-lg border border-gold-500/30 bg-accent px-4 py-3 text-sm text-foreground/80">
+          Please note: Our {selectedStylist.title.toLowerCase()} is not available
+          for appointments on {formatDaysOff(daysOff)}.
+        </p>
+      )}
 
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         {/* Calendar */}
@@ -169,7 +178,7 @@ export default function StepDateTime() {
             disabled={[
               { before: today },
               { after: lastDay },
-              (date) => !isSalonOpen(date),
+              (date) => !isSalonOpen(date) || isDayOff(date, daysOff),
             ]}
             showOutsideDays={false}
             // v9+ renders nav as a sibling above the month, not inside the

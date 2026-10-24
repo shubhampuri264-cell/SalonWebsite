@@ -24,8 +24,10 @@ import {
 } from './catalog.ts';
 import {
   BOOKING_HORIZON_DAYS,
+  dayOfWeek,
   formatDateChip,
   formatDateLabel,
+  formatDaysOff,
   formatTimeLabel,
   isBookableDate,
   nextBookableDates,
@@ -222,13 +224,7 @@ export function chipsForNode(
 
     case 'date':
     case 'reschedule_date':
-      return withEscapes(
-        nextBookableDates(6).map((date) => ({
-          label: formatDateChip(date),
-          intent: 'pick_date' as IntentId,
-          params: { date },
-        })),
-      );
+      return withEscapes(dateChips(daysOffFor(stylists, draft.stylistId)));
 
     case 'time':
     case 'reschedule_time':
@@ -291,6 +287,31 @@ function stylistChips(
     intent: 'pick_stylist' as IntentId,
     params: { stylist_id: s.id },
   }));
+}
+
+/**
+ * A stylist's weekly days off (migration 020). The booking API refuses these
+ * days too; filtering here is what keeps them off the chips in the first place.
+ */
+function daysOffFor(stylists: CatalogStylist[], id: string | undefined): string[] {
+  return stylists.find((s) => s.id === id)?.days_off ?? [];
+}
+
+/** The next six days the customer can actually book with this stylist. */
+function dateChips(daysOff: readonly string[], exclude?: string): Chip[] {
+  return nextBookableDates(6, daysOff)
+    .filter((date) => date !== exclude)
+    .map((date) => ({ label: formatDateChip(date), intent: 'pick_date' as IntentId, params: { date } }));
+}
+
+/**
+ * Told up front, on the step where they pick a day, rather than after a miss.
+ * Refers to the stylist by role, not by name — the owner's wording.
+ */
+function daysOffNote(stylist: CatalogStylist | undefined): string {
+  return stylist?.days_off.length
+    ? ` Please note, our ${stylist.title.toLowerCase()} is not available for appointments on ${formatDaysOff(stylist.days_off)}.`
+    : '';
 }
 
 function serviceCard(service: CatalogService, bookable = true): Card {
@@ -508,14 +529,11 @@ function assignStylist(
   const hasAlternative = eligibleStylists(ctx.stylists, ctx.stylistServices, service.id).length > 1;
 
   return {
-    reply: ctx.modelReply || `Which day suits you? You'll be with ${stylist.name}.`,
+    reply: (ctx.modelReply || `Which day suits you? You'll be with ${stylist.name}.`) +
+      daysOffNote(stylist),
     cards,
     chips: withEscapes([
-      ...nextBookableDates(6).map((date) => ({
-        label: formatDateChip(date),
-        intent: 'pick_date' as IntentId,
-        params: { date },
-      })),
+      ...dateChips(stylist.days_off),
       hasAlternative
         ? { label: 'Different stylist', intent: 'pick_service' as IntentId, params: { service_id: service.id }, style: 'ghost' as const }
         : { label: 'Different service', intent: 'book_start' as IntentId, style: 'ghost' as const },
@@ -539,17 +557,26 @@ async function handlePickDate(ctx: HandlerContext): Promise<HandlerResult> {
     return handleBookStart({ ...ctx, modelReply: "Let's start from the top — what are you booking in for?" });
   }
 
+  const stylist = ctx.stylists.find((s) => s.id === draft.stylistId);
+  const daysOff = stylist?.days_off ?? [];
+
   if (!isBookableDate(date)) {
     return {
       reply: `We can book up to ${BOOKING_HORIZON_DAYS} days ahead. Pick another day and I'll check what's free.`,
       cards: [],
-      chips: withEscapes(
-        nextBookableDates(6).map((d) => ({
-          label: formatDateChip(d),
-          intent: 'pick_date' as IntentId,
-          params: { date: d },
-        })),
-      ),
+      chips: withEscapes(dateChips(daysOff)),
+      node: 'date',
+    };
+  }
+
+  // Answered here rather than left to /api/availability: the model can pick any
+  // date from free text ("Friday with Sumita"), and this reply should not depend
+  // on a network round trip or on how the API happens to word its message.
+  if (stylist && daysOff.includes(dayOfWeek(date))) {
+    return {
+      reply: `Our ${stylist.title.toLowerCase()} is not available for appointments on ${dayOfWeek(date)}s. Please choose another day.`,
+      cards: [],
+      chips: withEscapes(dateChips(daysOff)),
       node: 'date',
     };
   }
@@ -584,11 +611,7 @@ async function handlePickDate(ctx: HandlerContext): Promise<HandlerResult> {
         ? `${result.data.message} Try one of these instead.`
         : `Nothing free on ${formatDateLabel(date)}. Try another day.`,
       cards: [],
-      chips: withEscapes(
-        nextBookableDates(6)
-          .filter((d) => d !== date)
-          .map((d) => ({ label: formatDateChip(d), intent: 'pick_date' as IntentId, params: { date: d } })),
-      ),
+      chips: withEscapes(dateChips(daysOff, date)),
       node: 'date',
     };
   }
@@ -1005,15 +1028,10 @@ async function handleRescheduleStart(ctx: HandlerContext): Promise<HandlerResult
   };
 
   return {
-    reply: `Moving your ${service.name}. Which day works better?`,
+    reply: `Moving your ${service.name}. Which day works better?` +
+      daysOffNote(ctx.stylists.find((s) => s.id === target.stylist_id)),
     cards: [],
-    chips: withEscapes(
-      nextBookableDates(6).map((date) => ({
-        label: formatDateChip(date),
-        intent: 'pick_date' as IntentId,
-        params: { date },
-      })),
-    ),
+    chips: withEscapes(dateChips(daysOffFor(ctx.stylists, target.stylist_id))),
     node: 'reschedule_date',
   };
 }

@@ -61,6 +61,15 @@ export function hoursForDate(dateStr: string): OpeningHours | null {
   return BUSINESS_HOURS[dayOfWeek(dateStr)] ?? null;
 }
 
+/**
+ * True if `dateStr` falls on one of a stylist's weekly days off
+ * (stylists.days_off, migration 020). Separate from opening hours: the salon is
+ * open, this one stylist is not working.
+ */
+export function isDayOff(daysOff: readonly string[], dateStr: string): boolean {
+  return daysOff.includes(dayOfWeek(dateStr));
+}
+
 export type BookingWindowResult =
   | { ok: true }
   | { ok: false; code: BookingWindowErrorCode; message: string };

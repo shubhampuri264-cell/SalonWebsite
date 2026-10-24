@@ -4,6 +4,7 @@ import {
   BUSINESS_HOURS,
   dayOfWeek,
   hoursForDate,
+  isDayOff,
   validateBookingWindow,
 } from './businessHours';
 import { addDays } from './dates';
@@ -56,6 +57,29 @@ describe('hoursForDate', () => {
     ['2026-08-10', '19:30'], // Monday
   ])('%s opens 10:00 and closes %s', (date, close) => {
     expect(hoursForDate(date)).toEqual({ open: '10:00', close });
+  });
+});
+
+describe('isDayOff', () => {
+  // Sumita Karki's row after migration 020.
+  const fridays = ['Friday'];
+
+  it('is true on every Friday, not just one', () => {
+    expect(isDayOff(fridays, '2026-10-30')).toBe(true);
+    expect(isDayOff(fridays, '2027-01-01')).toBe(true);
+  });
+
+  it('is false on the days either side', () => {
+    expect(isDayOff(fridays, '2026-10-29')).toBe(false); // Thursday
+    expect(isDayOff(fridays, '2026-10-31')).toBe(false); // Saturday
+  });
+
+  it('is false for a stylist with no days off', () => {
+    expect(isDayOff([], '2026-10-30')).toBe(false);
+  });
+
+  it('leaves the salon open: Friday still has opening hours', () => {
+    expect(hoursForDate('2026-10-30')).not.toBeNull();
   });
 });
 

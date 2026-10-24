@@ -41,8 +41,12 @@ export interface CatalogService {
 export interface CatalogStylist {
   id: string;
   name: string;
+  /** "Hair Stylist" — how a days-off note refers to them, without naming them. */
+  title: string;
   /** Display copy. Bookability lives in `stylist_services` — see migration 018. */
   specialties: string[] | null;
+  /** Weekdays never bookable with this stylist, e.g. ['Friday']. See migration 020. */
+  days_off: string[];
 }
 
 /**
@@ -87,7 +91,7 @@ export async function fetchServices(): Promise<CatalogService[]> {
 export async function fetchStylists(): Promise<CatalogStylist[]> {
   const { data, error } = await supabase()
     .from('stylists')
-    .select('id, name, specialties')
+    .select('id, name, title, specialties, days_off')
     .eq('is_active', true)
     .order('name', { ascending: true });
 
