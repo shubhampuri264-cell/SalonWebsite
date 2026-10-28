@@ -38,7 +38,7 @@ import { BUSINESS_HOURS } from './dates.ts';
  * key in practice: changing the prompt changes the bytes, so the first request
  * after a bump is a cache write.
  */
-export const PROMPT_VERSION = '1.3.0';
+export const PROMPT_VERSION = '1.4.0';
 
 const SALON_FACTS = `Icon Studio is a hair and beauty salon at 39-46 Queens Blvd, Sunnyside, NY 11104.
 Phone: (718) 255-6940.
@@ -160,7 +160,11 @@ function renderStylists(
       const off = stylist.days_off.length
         ? ` | not available for appointments on: ${stylist.days_off.join(', ')}`
         : '';
-      return `  ${stylist.id} | ${stylist.name} | does: ${does}${off}`;
+      // Same reason for time off ("is she in next Monday?"). ISO dates, inclusive.
+      const away = stylist.time_off.length
+        ? ` | away: ${stylist.time_off.map((r) => `${r.start} to ${r.end}, back ${r.back}`).join('; ')}`
+        : '';
+      return `  ${stylist.id} | ${stylist.name} | does: ${does}${off}${away}`;
     })
     .join('\n');
 }

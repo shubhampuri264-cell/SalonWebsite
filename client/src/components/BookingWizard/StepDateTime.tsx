@@ -5,7 +5,10 @@ import { useBookingStore } from '@/store/bookingStore';
 import {
   isSalonOpen,
   isDayOff,
+  isTimeOff,
   formatDaysOff,
+  formatDayLabel,
+  formatTimeOffSpan,
   formatTime,
   formatDate,
   salonToday,
@@ -46,6 +49,7 @@ export default function StepDateTime() {
 
   const stylistId = selectedStylist?.id ?? null;
   const daysOff = selectedStylist?.days_off ?? [];
+  const timeOff = selectedStylist?.time_off ?? [];
 
   // Back skips the stylist step when it was skipped on the way in — with one
   // eligible stylist there is nothing there to change.
@@ -164,6 +168,17 @@ export default function StepDateTime() {
           for appointments on {formatDaysOff(daysOff)}.
         </p>
       )}
+      {selectedStylist &&
+        timeOff.map((range) => (
+          <p
+            key={range.start}
+            className="mt-4 rounded-lg border border-gold-500/30 bg-accent px-4 py-3 text-sm text-foreground/80"
+          >
+            Please note: Our {selectedStylist.title.toLowerCase()} is away{' '}
+            {formatTimeOffSpan(range)}. We're sorry for any inconvenience and
+            can't wait to see you again from {formatDayLabel(range.back)}!
+          </p>
+        ))}
 
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         {/* Calendar */}
@@ -178,7 +193,8 @@ export default function StepDateTime() {
             disabled={[
               { before: today },
               { after: lastDay },
-              (date) => !isSalonOpen(date) || isDayOff(date, daysOff),
+              (date) =>
+                !isSalonOpen(date) || isDayOff(date, daysOff) || isTimeOff(date, timeOff),
             ]}
             showOutsideDays={false}
             // v9+ renders nav as a sibling above the month, not inside the

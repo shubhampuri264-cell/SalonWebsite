@@ -107,7 +107,8 @@ export const useBookingStore = create<BookingState>()(
       //
       // Bumped again for stylist days off (migration 020): an older session's
       // stylist has no days_off and may already hold one of those dates.
-      version: 3,
+      // And for time off (migration 021), for the same reason.
+      version: 4,
       migrate: () => ({
         currentStep: 0 as const,
         selectedService: null,

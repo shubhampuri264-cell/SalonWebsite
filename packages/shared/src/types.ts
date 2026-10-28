@@ -7,6 +7,13 @@ export type AppointmentStatus =
   | 'completed'
   | 'no_show';
 
+/** Consecutive days a stylist is away (inclusive), and the first day back. YYYY-MM-DD. */
+export interface TimeOff {
+  start: string;
+  end: string;
+  back: string;
+}
+
 export interface Stylist {
   id: string;
   name: string;
@@ -20,6 +27,11 @@ export interface Stylist {
   specialties: string[];
   /** Weekdays never bookable with this stylist, e.g. ['Friday'] (migration 020). */
   days_off: string[];
+  /**
+   * Upcoming days away, from full-day blocked_slots rows (migration 021). Added
+   * by GET /api/stylists, not a column.
+   */
+  time_off: TimeOff[];
   years_exp: number;
   image_url: string | null;
   is_active: boolean;

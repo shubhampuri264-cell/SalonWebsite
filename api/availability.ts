@@ -5,10 +5,12 @@ import { generateAvailableSlots } from './_lib/timeSlots';
 import { captureError } from './_lib/sentry';
 import { salonToday, salonNowMinutes, addDays } from './_lib/dates';
 import { stylistPerformsService } from './_lib/eligibility';
+import { fetchTimeOff } from './_lib/timeOff';
 import {
   hoursForDate,
   isDayOff,
   dayOfWeek,
+  formatTimeOffSpan,
   BOOKING_HORIZON_DAYS,
   MIN_LEAD_MINUTES,
 } from './_lib/businessHours';
@@ -96,6 +98,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // one of those customers into a terminal 409 at booking time.
   if (slots === null) {
     return res.status(503).json({ error: 'Could not load availability. Please try again.' });
+  }
+  // A day blocked from opening to closing is time off, not a full book. The
+  // calendar greys these days out already; this covers a page loaded before
+  // the block was added.
+  if (slots.length === 0) {
+    const away = (await fetchTimeOff([stylist]))
+      ?.get(stylist.id)
+      ?.find((range) => range.start <= date && date <= range.end);
+    if (away) {
+      return res.json({
+        slots: [],
+        message: `Our ${stylist.title.toLowerCase()} is away ${formatTimeOffSpan(away)}`,
+      });
+    }
   }
   return res.json({ slots: slots.map((time) => ({ time })) });
 }

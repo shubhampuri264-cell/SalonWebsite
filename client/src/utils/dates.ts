@@ -1,4 +1,4 @@
-import { BUSINESS_HOURS } from '@luxe/shared';
+import { BUSINESS_HOURS, type TimeOff } from '@luxe/shared';
 
 /** Format a YYYY-MM-DD string to "Monday, March 15, 2026" */
 export function formatDate(dateStr: string): string {
@@ -63,6 +63,29 @@ export function formatDaysOff(daysOff: readonly string[]): string {
   return plural.length > 1
     ? `${plural.slice(0, -1).join(', ')} and ${plural[plural.length - 1]}`
     : plural.join('');
+}
+
+/** Check if a JS Date falls inside one of a stylist's time-off runs */
+export function isTimeOff(date: Date, timeOff: readonly TimeOff[]): boolean {
+  const day = toDateStr(date);
+  return timeOff.some((range) => range.start <= day && day <= range.end);
+}
+
+/** Format a YYYY-MM-DD string to "Saturday, October 31" */
+export function formatDayLabel(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+/** "from Saturday, October 31 to Wednesday, November 4", or "on Saturday, October 31" */
+export function formatTimeOffSpan(range: TimeOff): string {
+  return range.start === range.end
+    ? `on ${formatDayLabel(range.start)}`
+    : `from ${formatDayLabel(range.start)} to ${formatDayLabel(range.end)}`;
 }
 
 /**

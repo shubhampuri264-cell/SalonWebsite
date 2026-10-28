@@ -109,21 +109,89 @@ export function isBookableDate(dateStr: string, today: string = salonToday()): b
 }
 
 /**
+ * A run of consecutive days a stylist is away (start and end inclusive), and
+ * `back`, the first later day they can be booked. Same shape as the website's.
+ */
+export interface TimeOff {
+  start: string;
+  end: string;
+  back: string;
+}
+
+/** The parts of a stylist that decide which days they work. CatalogStylist has both. */
+export interface StylistSchedule {
+  /** Weekly days off (stylists.days_off, migration 020). */
+  days_off: readonly string[];
+  /** Upcoming days away (full-day blocked_slots rows, migration 021). */
+  time_off: readonly TimeOff[];
+}
+
+/**
+ * True when a blocked_slots row covers its day's full opening hours, which makes
+ * the day time off rather than a busy stretch. Port of api/_lib/businessHours.ts.
+ * Postgres sends 'HH:MM:SS'; zero-padded 'HH:MM' strings compare correctly as text.
+ */
+export function isFullDayBlock(block: { blocked_date: string; start_time: string; end_time: string }): boolean {
+  const hours = hoursForDate(block.blocked_date);
+  return hours !== null &&
+    block.start_time.slice(0, 5) <= hours.open &&
+    block.end_time.slice(0, 5) >= hours.close;
+}
+
+/**
+ * Groups a stylist's away dates into runs of consecutive days, with the first
+ * day back after each. Port of api/_lib/businessHours.ts.
+ */
+export function timeOffRanges(awayDates: readonly string[], daysOff: readonly string[]): TimeOff[] {
+  const away = new Set(awayDates);
+  const runs: { start: string; end: string }[] = [];
+  for (const date of [...away].sort()) {
+    const last = runs.at(-1);
+    if (last && addDays(last.end, 1) === date) last.end = date;
+    else runs.push({ start: date, end: date });
+  }
+
+  const unavailable = (date: string) =>
+    away.has(date) || daysOff.includes(dayOfWeek(date)) || hoursForDate(date) === null;
+  return runs.map((run) => {
+    let back = addDays(run.end, 1);
+    // Bounded: a stylist off all seven days would otherwise never come back.
+    for (let i = 0; i < BOOKING_HORIZON_DAYS && unavailable(back); i++) back = addDays(back, 1);
+    return { ...run, back };
+  });
+}
+
+/** The time-off run `dateStr` falls in, if any. */
+export function timeOffOn(timeOff: readonly TimeOff[], dateStr: string): TimeOff | undefined {
+  return timeOff.find((range) => range.start <= dateStr && dateStr <= range.end);
+}
+
+/**
  * The next `count` bookable dates from `today` inclusive, skipping the
- * stylist's weekly days off (stylists.days_off, migration 020).
+ * stylist's weekly days off and time off.
  */
 export function nextBookableDates(
   count: number,
-  daysOff: readonly string[] = [],
+  stylist?: StylistSchedule,
   today: string = salonToday(),
 ): string[] {
   const dates: string[] = [];
   let cursor = today;
-  for (let i = 0; i < count * 3 && dates.length < count; i++) {
-    if (isBookableDate(cursor, today) && !daysOff.includes(dayOfWeek(cursor))) dates.push(cursor);
+  // isBookableDate turns false past the horizon, so this cannot run away.
+  for (let i = 0; i <= BOOKING_HORIZON_DAYS && dates.length < count; i++) {
+    const off = stylist !== undefined &&
+      (stylist.days_off.includes(dayOfWeek(cursor)) || timeOffOn(stylist.time_off, cursor) !== undefined);
+    if (isBookableDate(cursor, today) && !off) dates.push(cursor);
     cursor = addDays(cursor, 1);
   }
   return dates;
+}
+
+/** "from Saturday, October 31 to Wednesday, November 4", or "on Saturday, October 31". Same as the website's. */
+export function formatTimeOffSpan(range: TimeOff): string {
+  return range.start === range.end
+    ? `on ${formatDateLabel(range.start)}`
+    : `from ${formatDateLabel(range.start)} to ${formatDateLabel(range.end)}`;
 }
 
 /** ['Friday'] -> "Fridays"; ['Monday', 'Friday'] -> "Mondays and Fridays". Same as the website's. */

@@ -14,7 +14,14 @@
 // is applied here, in the salon's timezone, exactly as migration 017 documents.
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { salonToday } from './dates.ts';
+import {
+  addDays,
+  BOOKING_HORIZON_DAYS,
+  isFullDayBlock,
+  salonToday,
+  timeOffRanges,
+  type TimeOff,
+} from './dates.ts';
 
 let client: SupabaseClient | null = null;
 
@@ -47,6 +54,8 @@ export interface CatalogStylist {
   specialties: string[] | null;
   /** Weekdays never bookable with this stylist, e.g. ['Friday']. See migration 020. */
   days_off: string[];
+  /** Upcoming days away, from full-day blocked_slots rows. See migration 021. */
+  time_off: TimeOff[];
 }
 
 /**
@@ -89,17 +98,39 @@ export async function fetchServices(): Promise<CatalogService[]> {
 }
 
 export async function fetchStylists(): Promise<CatalogStylist[]> {
-  const { data, error } = await supabase()
-    .from('stylists')
-    .select('id, name, title, specialties, days_off')
-    .eq('is_active', true)
-    .order('name', { ascending: true });
+  const today = salonToday();
+  const [stylists, blocked] = await Promise.all([
+    supabase()
+      .from('stylists')
+      .select('id, name, title, specialties, days_off')
+      .eq('is_active', true)
+      .order('name', { ascending: true }),
+    supabase()
+      .from('blocked_slots')
+      .select('stylist_id, blocked_date, start_time, end_time')
+      .gte('blocked_date', today)
+      .lte('blocked_date', addDays(today, BOOKING_HORIZON_DAYS)),
+  ]);
 
-  if (error) {
-    console.error('[catalog] stylists query failed:', error.message);
+  if (stylists.error) {
+    console.error('[catalog] stylists query failed:', stylists.error.message);
     return [];
   }
-  return (data ?? []) as CatalogStylist[];
+  // Not fatal. Time off only keeps those days off the chips; the booking API
+  // refuses them regardless, so the cost of missing it is a chip that finds no
+  // times, not a booking on a day the stylist is away.
+  if (blocked.error) {
+    console.error('[catalog] blocked_slots query failed:', blocked.error.message);
+  }
+
+  const fullDays = (blocked.data ?? []).filter(isFullDayBlock);
+  return (stylists.data ?? []).map((stylist) => ({
+    ...stylist,
+    time_off: timeOffRanges(
+      fullDays.filter((b) => b.stylist_id === stylist.id).map((b) => b.blocked_date),
+      stylist.days_off,
+    ),
+  })) as CatalogStylist[];
 }
 
 /**

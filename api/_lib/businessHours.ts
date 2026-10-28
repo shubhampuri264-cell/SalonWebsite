@@ -70,6 +70,77 @@ export function isDayOff(daysOff: readonly string[], dateStr: string): boolean {
   return daysOff.includes(dayOfWeek(dateStr));
 }
 
+/**
+ * A run of consecutive days a stylist is away (start and end inclusive), and
+ * `back`, the first later day they can be booked. Sent to the website as
+ * Stylist.time_off.
+ */
+export interface TimeOff {
+  start: string;
+  end: string;
+  back: string;
+}
+
+/**
+ * True when a blocked_slots row covers its day's full opening hours. That makes
+ * the day time off rather than a busy stretch (migration 021), and only those
+ * days are greyed out and explained to customers.
+ */
+export function isFullDayBlock(block: {
+  blocked_date: string;
+  start_time: string;
+  end_time: string;
+}): boolean {
+  const hours = hoursForDate(block.blocked_date);
+  return (
+    hours !== null &&
+    toMinutes(block.start_time) <= toMinutes(hours.open) &&
+    toMinutes(block.end_time) >= toMinutes(hours.close)
+  );
+}
+
+/**
+ * Groups a stylist's away dates into runs of consecutive days. `back` skips
+ * weekly days off and closed days as well as other away days, so a run ending
+ * on a Thursday for a stylist off on Fridays comes back on the Saturday.
+ */
+export function timeOffRanges(awayDates: readonly string[], daysOff: readonly string[]): TimeOff[] {
+  const away = new Set(awayDates);
+  const runs: { start: string; end: string }[] = [];
+  for (const date of [...away].sort()) {
+    const last = runs[runs.length - 1];
+    if (last && addDays(last.end, 1) === date) last.end = date;
+    else runs.push({ start: date, end: date });
+  }
+
+  const unavailable = (date: string) =>
+    away.has(date) || isDayOff(daysOff, date) || hoursForDate(date) === null;
+  return runs.map((run) => {
+    let back = addDays(run.end, 1);
+    // Bounded: a stylist off all seven days would otherwise never come back.
+    for (let i = 0; i < BOOKING_HORIZON_DAYS && unavailable(back); i++) back = addDays(back, 1);
+    return { ...run, back };
+  });
+}
+
+/** "Saturday, October 31" — no year, everything bookable is within the horizon. */
+export function formatDayLabel(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day, 12)).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+/** "from Saturday, October 31 to Wednesday, November 4", or "on Saturday, October 31". */
+export function formatTimeOffSpan(range: TimeOff): string {
+  return range.start === range.end
+    ? `on ${formatDayLabel(range.start)}`
+    : `from ${formatDayLabel(range.start)} to ${formatDayLabel(range.end)}`;
+}
+
 export type BookingWindowResult =
   | { ok: true }
   | { ok: false; code: BookingWindowErrorCode; message: string };

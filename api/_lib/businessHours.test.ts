@@ -3,8 +3,11 @@ import {
   BOOKING_HORIZON_DAYS,
   BUSINESS_HOURS,
   dayOfWeek,
+  formatTimeOffSpan,
   hoursForDate,
   isDayOff,
+  isFullDayBlock,
+  timeOffRanges,
   validateBookingWindow,
 } from './businessHours';
 import { addDays } from './dates';
@@ -80,6 +83,61 @@ describe('isDayOff', () => {
 
   it('leaves the salon open: Friday still has opening hours', () => {
     expect(hoursForDate('2026-10-30')).not.toBeNull();
+  });
+});
+
+describe('isFullDayBlock', () => {
+  // Migration 021's rows, as Postgres returns TIME values.
+  const row = (blocked_date: string, start_time = '10:00:00', end_time = '19:30:00') => ({
+    blocked_date,
+    start_time,
+    end_time,
+  });
+
+  it('is true for a block covering opening hours, Sunday included', () => {
+    expect(isFullDayBlock(row('2026-10-31'))).toBe(true); // Saturday, closes 19:30
+    expect(isFullDayBlock(row('2026-11-01'))).toBe(true); // Sunday, closes 18:00
+  });
+
+  it('is false for a block covering only part of the day', () => {
+    expect(isFullDayBlock(row('2026-10-31', '10:00:00', '14:00:00'))).toBe(false);
+    expect(isFullDayBlock(row('2026-10-31', '12:00:00', '19:30:00'))).toBe(false);
+  });
+});
+
+describe('timeOffRanges', () => {
+  const away = ['2026-11-03', '2026-10-31', '2026-11-01', '2026-11-02', '2026-11-04'];
+
+  it('turns migration 021 into one run, back on Thursday November 5', () => {
+    expect(timeOffRanges(away, ['Friday'])).toEqual([
+      { start: '2026-10-31', end: '2026-11-04', back: '2026-11-05' },
+    ]);
+  });
+
+  it('skips a weekly day off when working out the day back', () => {
+    // Away on Thursday, off on Fridays: back on Saturday.
+    expect(timeOffRanges(['2026-11-05'], ['Friday'])).toEqual([
+      { start: '2026-11-05', end: '2026-11-05', back: '2026-11-07' },
+    ]);
+  });
+
+  it('keeps separate absences apart', () => {
+    expect(timeOffRanges(['2026-11-02', '2026-11-10'], [])).toEqual([
+      { start: '2026-11-02', end: '2026-11-02', back: '2026-11-03' },
+      { start: '2026-11-10', end: '2026-11-10', back: '2026-11-11' },
+    ]);
+  });
+
+  it('is empty for a stylist with no time off', () => {
+    expect(timeOffRanges([], ['Friday'])).toEqual([]);
+  });
+
+  it('reads as the approved wording', () => {
+    const [run] = timeOffRanges(away, ['Friday']);
+    expect(formatTimeOffSpan(run)).toBe('from Saturday, October 31 to Wednesday, November 4');
+    expect(formatTimeOffSpan({ start: '2026-11-05', end: '2026-11-05', back: '2026-11-07' })).toBe(
+      'on Thursday, November 5',
+    );
   });
 });
 

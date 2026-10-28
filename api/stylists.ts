@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
 import { supabaseAdmin } from './_lib/supabase';
 import { stylistIdsForService } from './_lib/eligibility';
+import { fetchTimeOff } from './_lib/timeOff';
 
 const querySchema = z.object({
   /**
@@ -29,7 +30,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (error) return res.status(500).json({ error: error.message });
 
-  if (!service_id) return res.json(data ?? []);
+  // Time off rides along so the booking calendar can grey those days out and
+  // say why. Fail closed: an empty list would advertise days the stylist is away.
+  const timeOff = await fetchTimeOff(data ?? []);
+  if (!timeOff) {
+    return res.status(503).json({ error: 'Could not load stylists. Please try again.' });
+  }
+  const stylists = (data ?? []).map((s) => ({ ...s, time_off: timeOff.get(s.id) ?? [] }));
+
+  if (!service_id) return res.json(stylists);
 
   // is_active on the service too: migration 013 retires services by
   // deactivating them, and a stale page must not resolve a stylist for one.
@@ -52,5 +61,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const allowed = new Set(eligibleIds);
-  return res.json((data ?? []).filter((s) => allowed.has(s.id)));
+  return res.json(stylists.filter((s) => allowed.has(s.id)));
 }
