@@ -47,19 +47,19 @@ describe('dayOfWeek', () => {
 });
 
 describe('hoursForDate', () => {
-  // The salon opens 7 days a week, but Sunday closes earlier than the other
-  // six, so each day is pinned individually rather than asserted as one shared
-  // shape — a single toEqual would have hidden the Sunday case entirely.
+  // The salon opens 7 days a week, but Sunday opens later and closes earlier
+  // than the other six, so each day is pinned individually rather than asserted
+  // as one shared shape — a single toEqual would have hidden the Sunday case.
   it.each([
-    ['2026-08-04', '19:30'], // Tuesday
-    ['2026-08-05', '19:30'], // Wednesday
-    ['2026-08-06', '19:30'], // Thursday
-    ['2026-08-07', '19:30'], // Friday
-    ['2026-08-08', '19:30'], // Saturday
-    ['2026-08-09', '18:00'], // Sunday
-    ['2026-08-10', '19:30'], // Monday
-  ])('%s opens 10:00 and closes %s', (date, close) => {
-    expect(hoursForDate(date)).toEqual({ open: '10:00', close });
+    ['2026-08-04', '09:30', '19:00'], // Tuesday
+    ['2026-08-05', '09:30', '19:00'], // Wednesday
+    ['2026-08-06', '09:30', '19:00'], // Thursday
+    ['2026-08-07', '09:30', '19:00'], // Friday
+    ['2026-08-08', '09:30', '19:00'], // Saturday
+    ['2026-08-09', '10:00', '18:00'], // Sunday
+    ['2026-08-10', '09:30', '19:00'], // Monday
+  ])('%s opens %s and closes %s', (date, open, close) => {
+    expect(hoursForDate(date)).toEqual({ open, close });
   });
 });
 
@@ -87,21 +87,27 @@ describe('isDayOff', () => {
 });
 
 describe('isFullDayBlock', () => {
-  // Migration 021's rows, as Postgres returns TIME values.
-  const row = (blocked_date: string, start_time = '10:00:00', end_time = '19:30:00') => ({
+  // A block covering the longest day (Mon-Sat), as Postgres returns TIME values.
+  const row = (blocked_date: string, start_time = '09:30:00', end_time = '19:00:00') => ({
     blocked_date,
     start_time,
     end_time,
   });
 
   it('is true for a block covering opening hours, Sunday included', () => {
-    expect(isFullDayBlock(row('2026-10-31'))).toBe(true); // Saturday, closes 19:30
-    expect(isFullDayBlock(row('2026-11-01'))).toBe(true); // Sunday, closes 18:00
+    expect(isFullDayBlock(row('2026-10-31'))).toBe(true); // Saturday, 09:30-19:00
+    expect(isFullDayBlock(row('2026-11-01'))).toBe(true); // Sunday, 10:00-18:00
   });
 
   it('is false for a block covering only part of the day', () => {
-    expect(isFullDayBlock(row('2026-10-31', '10:00:00', '14:00:00'))).toBe(false);
-    expect(isFullDayBlock(row('2026-10-31', '12:00:00', '19:30:00'))).toBe(false);
+    expect(isFullDayBlock(row('2026-10-31', '09:30:00', '14:00:00'))).toBe(false);
+    expect(isFullDayBlock(row('2026-10-31', '12:00:00', '19:00:00'))).toBe(false);
+  });
+
+  it('is false on a weekday for a block starting at 10:00, which leaves 09:30 bookable', () => {
+    // Migration 021's 10:00-19:30 rows predate the 09:30 opening.
+    expect(isFullDayBlock(row('2026-10-31', '10:00:00', '19:30:00'))).toBe(false); // Saturday
+    expect(isFullDayBlock(row('2026-11-01', '10:00:00', '19:30:00'))).toBe(true); // Sunday
   });
 });
 
@@ -171,24 +177,35 @@ describe('validateBookingWindow', () => {
     expect(baseline({ time: '14:15' })).toMatchObject({ ok: false, code: 'TIME_OFF_GRID' });
   });
 
+  it('accepts the 09:30 opening slot Monday to Saturday', () => {
+    expect(baseline({ time: '09:30' })).toEqual({ ok: true });
+  });
+
   it('rejects an on-grid time before opening', () => {
-    // 09:30 is deliberate: it sits ON the grid anchored to 10:00, so it gets
+    // 09:00 is deliberate: it sits ON the grid anchored to 09:30, so it gets
     // past the grid check and reaches BEFORE_OPEN. An off-grid early time like
-    // 09:31 would be rejected as TIME_OFF_GRID first and never exercise this.
-    expect(baseline({ time: '09:30' })).toMatchObject({ ok: false, code: 'BEFORE_OPEN' });
+    // 09:01 would be rejected as TIME_OFF_GRID first and never exercise this.
+    expect(baseline({ time: '09:00' })).toMatchObject({ ok: false, code: 'BEFORE_OPEN' });
+  });
+
+  it('rejects 09:30 on a Sunday, which opens at 10:00', () => {
+    expect(baseline({ date: '2026-08-09', time: '09:30' })).toMatchObject({
+      ok: false,
+      code: 'BEFORE_OPEN',
+    });
   });
 
   it('rejects a service whose END runs past closing', () => {
     // Starts inside hours; only the duration pushes it over. This is the case
     // a start-time-only check would wrongly accept.
-    expect(baseline({ time: '19:00', durationMin: 180 })).toMatchObject({
+    expect(baseline({ time: '18:00', durationMin: 180 })).toMatchObject({
       ok: false,
       code: 'AFTER_CLOSE',
     });
   });
 
   it('accepts a service that ends exactly at closing', () => {
-    expect(baseline({ time: '18:30', durationMin: 60 })).toEqual({ ok: true });
+    expect(baseline({ time: '18:00', durationMin: 60 })).toEqual({ ok: true });
   });
 
   it('rejects a time that has already passed today', () => {

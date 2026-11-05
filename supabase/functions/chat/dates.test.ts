@@ -58,6 +58,8 @@ Deno.test('time off is never offered, and the day back is', () => {
 
 Deno.test('only a block covering opening hours counts as time off', () => {
   assert(isFullDayBlock({ blocked_date: '2026-11-01', start_time: '10:00:00', end_time: '19:30:00' }));
+  assert(isFullDayBlock({ blocked_date: '2026-11-02', start_time: '09:30:00', end_time: '19:00:00' }));
+  assert(!isFullDayBlock({ blocked_date: '2026-11-02', start_time: '10:00:00', end_time: '19:30:00' }));
   assert(!isFullDayBlock({ blocked_date: '2026-11-02', start_time: '10:00:00', end_time: '14:00:00' }));
 });
 

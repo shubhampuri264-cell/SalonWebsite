@@ -44,7 +44,7 @@ const FEATURES = [
   { icon: Scissors, title: 'Expert Stylists', desc: 'A team specializing in color, cuts, and threading with years of experience.' },
   { icon: Star, title: 'Boutique Experience', desc: 'A warm, personal atmosphere where every client is the priority.' },
   { icon: CalendarCheck, title: 'Online Booking', desc: 'Book or cancel online 24/7. Signed in? Iris can move your booking too.' },
-  { icon: Clock, title: 'Open 7 Days', desc: 'Mon–Sat 10am to 7:30pm, Sun to 6pm — appointments and walk-ins welcome.' },
+  { icon: Clock, title: 'Open 7 Days', desc: 'Mon–Sat 9:30am to 7pm, Sun 10am to 6pm — appointments and walk-ins welcome.' },
 ];
 
 export default function Home() {
@@ -94,7 +94,7 @@ export default function Home() {
               <div className="hairline" />
               <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4 text-gold-600" aria-hidden="true" />
-                Open 7 days · 10am–7:30pm, Sun to 6pm · walk-ins welcome
+                Open 7 days · 9:30am–7pm, Sun 10am–6pm · walk-ins welcome
               </p>
             </div>
           </div>

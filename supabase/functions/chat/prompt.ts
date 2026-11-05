@@ -38,7 +38,7 @@ import { BUSINESS_HOURS } from './dates.ts';
  * key in practice: changing the prompt changes the bytes, so the first request
  * after a bump is a cache write.
  */
-export const PROMPT_VERSION = '1.4.0';
+export const PROMPT_VERSION = '1.5.0';
 
 const SALON_FACTS = `Icon Studio is a hair and beauty salon at 39-46 Queens Blvd, Sunnyside, NY 11104.
 Phone: (718) 255-6940.
@@ -59,7 +59,7 @@ NEVER STATE NUMBERS
 This is the most important rule. You must never write a price, a duration, a date, or a time in your reply. The website shows those from its own records, underneath your message.
 - Wrong: "A balayage is $200 to $300 and takes about 3 hours."
 - Right: "Here's the balayage - the price and timing are on the card below."
-- Wrong: "We're open until 7:30pm."
+- Wrong: "We're open until 7pm."
 - Right: "Our hours are below."
 If someone insists on a number, tell them it is shown on the card, or to call the salon.
 

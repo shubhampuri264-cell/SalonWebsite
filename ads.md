@@ -16,7 +16,7 @@ carries a `file:line` citation so you can verify it. Anything I could not find i
 | Email | ks@iconht.studio (admin login stays sumipuri34@gmail.com) | `client/src/utils/dates.ts:46`, `supabase/migrations/005_sync_services_to_flyer.sql:26` |
 | Instagram | https://www.instagram.com/sumilovestyle/ | `client/src/utils/dates.ts:47` |
 | TikTok | https://www.tiktok.com/@sumi91_ | `client/src/utils/dates.ts:48` |
-| Hours | 7 days/week, Mon–Sat 10:00 AM – 7:30 PM, Sun 10:00 AM – 6:00 PM | `packages/shared/src/constants.ts:33-41`, `client/src/utils/dates.ts:52-60` |
+| Hours | 7 days/week, Mon–Sat 9:30 AM – 7:00 PM, Sun 10:00 AM – 6:00 PM | `packages/shared/src/constants.ts:33-41`, `client/src/utils/dates.ts:52-60` |
 | Geo | lat 40.7435241, lng -73.9245996 | embedded in the Google Maps link at `client/src/pages/Location.tsx:47` |
 | Positioning | "Boutique hair salon and threading studio in Sunnyside, Queens" | `client/src/components/layout/Footer.tsx:21` |
 | Production domain | `[TODO: owner to confirm]` — the code reads it from the `CLIENT_URL` env var (`api/_lib/emails.ts:156`), it is not hardcoded anywhere |
@@ -227,7 +227,7 @@ Checklist, in order:
    "39-46 Queens Blvd, Sunnyside, NY 11104", "(718) 255-6940". Google cross-checks this. If your GBP says
    "Icon Studios" (plural, as the maps link at `client/src/pages/Location.tsx:47` suggests) and the site
    says "Icon Studio", pick one and make them identical everywhere.
-4. **Hours: Mon–Sat 10:00 AM – 7:30 PM, Sun 10:00 AM – 6:00 PM**, matching `packages/shared/src/constants.ts:33-41`.
+4. **Hours: Mon–Sat 9:30 AM – 7:00 PM, Sun 10:00 AM – 6:00 PM**, matching `packages/shared/src/constants.ts:33-41`.
 5. **Photos — this is where most salons lose.** Upload 25+ to start, then 3–5 new ones every week
    forever. Google's own data shows listings with 100+ photos get several times the direction requests of
    listings with fewer than 10. You already have usable material in `client/public/gallery/`. Categories
@@ -341,8 +341,8 @@ every crawler receives without executing JavaScript. Paste this just before `</h
   "openingHoursSpecification": [{
     "@type": "OpeningHoursSpecification",
     "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
-    "opens": "10:00",
-    "closes": "19:30"
+    "opens": "09:30",
+    "closes": "19:00"
   }, {
     "@type": "OpeningHoursSpecification",
     "dayOfWeek": ["Sunday"],
@@ -410,7 +410,7 @@ Currently `client/index.html:7-8` has a title and description, and nothing else 
 shared link renders as a bare grey box. Replace/extend lines 7–8 with:
 
 ```html
-<meta name="description" content="Icon Studio is a boutique hair salon and eyebrow threading studio at 39-46 Queens Blvd, Sunnyside, Queens. Balayage, keratin, color, threading, waxing, facials and lashes. Open 7 days, 10am-7:30pm (Sun to 6pm). Book online." />
+<meta name="description" content="Icon Studio is a boutique hair salon and eyebrow threading studio at 39-46 Queens Blvd, Sunnyside, Queens. Balayage, keratin, color, threading, waxing, facials and lashes. Open 7 days, 9:30am-7pm (Sun 10am-6pm). Book online." />
 <link rel="canonical" href="https://[TODO: owner to confirm domain]/" />
 <meta name="robots" content="index, follow, max-image-preview:large" />
 <meta property="og:type" content="website" />
@@ -692,7 +692,7 @@ You already have both accounts: Instagram `@sumilovestyle` and TikTok `@sumi91_`
   and "Call" action buttons appear.
 - **Instagram's native "Book Now" action button** can link to your booking page — turn it on.
 - **Put the address and "Book online" in the bio text itself**, not just the link:
-  `39-46 Queens Blvd, Sunnyside | Open 7 days 10-8 | Book below`.
+  `39-46 Queens Blvd, Sunnyside | Open 7 days 9:30-7 (Sun 10-6) | Book below`.
 - **Reply to every comment and DM within a few hours.** Meta weights engagement heavily, and a DM enquiry
   is a booking that has already raised its hand.
 - **Add a UTM tag to the bio link** (`?utm_source=instagram&utm_medium=bio`) so GA4 can actually attribute

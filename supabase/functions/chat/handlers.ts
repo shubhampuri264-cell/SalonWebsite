@@ -1186,7 +1186,7 @@ function handleHours(ctx: HandlerContext): HandlerResult {
       // are: a closing time Iris typed would be a closing time Iris could get
       // wrong.
       rows: [
-        { day: 'Monday – Saturday', hours: '10:00 AM – 7:30 PM' },
+        { day: 'Monday – Saturday', hours: '9:30 AM – 7:00 PM' },
         { day: 'Sunday', hours: '10:00 AM – 6:00 PM' },
       ],
       address: SALON_ADDRESS,
