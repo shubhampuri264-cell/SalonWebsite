@@ -32,9 +32,11 @@ import {
   formatTimeOffSpan,
   isBookableDate,
   nextBookableDates,
+  SALON_CLOSURES,
   salonToday,
   timeOffOn,
   type TimeOff,
+  upcomingClosures,
 } from './dates.ts';
 import type { IntentId, NodeId } from './intents.ts';
 import { CATEGORIES } from './intents.ts';
@@ -568,6 +570,16 @@ async function handlePickDate(ctx: HandlerContext): Promise<HandlerResult> {
   }
 
   const stylist = ctx.stylists.find((s) => s.id === draft.stylistId);
+
+  const closure = SALON_CLOSURES[date];
+  if (closure) {
+    return {
+      reply: `The salon is closed on ${formatDateLabel(date)} for ${closure}. Please choose another day.`,
+      cards: [],
+      chips: withEscapes(dateChips(stylist)),
+      node: 'date',
+    };
+  }
 
   if (!isBookableDate(date)) {
     return {
@@ -1188,6 +1200,7 @@ function handleHours(ctx: HandlerContext): HandlerResult {
       rows: [
         { day: 'Monday – Saturday', hours: '9:30 AM – 7:00 PM' },
         { day: 'Sunday', hours: '10:00 AM – 6:00 PM' },
+        ...upcomingClosures().map((c) => ({ day: formatDateLabel(c.date), hours: `Closed for ${c.occasion}` })),
       ],
       address: SALON_ADDRESS,
       phone: SALON_PHONE,

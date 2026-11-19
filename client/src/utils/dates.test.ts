@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { salonToday, toDateStr } from './dates';
+import { isSalonOpen, salonToday, toDateStr, upcomingClosures } from './dates';
 
 // Kathmandu is UTC+5:45, so local midnight is still the previous day in UTC.
 // That offset is what made toISOString() select the wrong day in the booking
@@ -36,5 +36,27 @@ describe('salonToday', () => {
   it("uses New York's date, not the visitor's", () => {
     // 9:30 PM Oct 7 in Los Angeles is already 12:30 AM Oct 8 in New York.
     expect(salonToday(new Date('2026-10-08T04:30:00Z'))).toBe('2026-10-08');
+  });
+});
+
+describe('salon closures', () => {
+  it('greys out Thanksgiving, an ordinarily open Thursday', () => {
+    expect(isSalonOpen(new Date(2026, 10, 26))).toBe(false);
+    expect(isSalonOpen(new Date(2026, 10, 27))).toBe(true);
+  });
+
+  it('lists a closure inside the window with the day the salon reopens', () => {
+    expect(upcomingClosures('2026-11-19', 14)).toEqual([
+      { date: '2026-11-26', occasion: 'Thanksgiving', reopens: '2026-11-27' },
+    ]);
+  });
+
+  it('includes the closure on the day itself and drops it the day after', () => {
+    expect(upcomingClosures('2026-11-26', 14)).toHaveLength(1);
+    expect(upcomingClosures('2026-11-27', 14)).toEqual([]);
+  });
+
+  it('leaves out a closure beyond the window', () => {
+    expect(upcomingClosures('2026-11-01', 14)).toEqual([]);
   });
 });

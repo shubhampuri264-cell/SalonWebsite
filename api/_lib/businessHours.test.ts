@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   BOOKING_HORIZON_DAYS,
   BUSINESS_HOURS,
+  closedMessage,
   dayOfWeek,
   formatTimeOffSpan,
   hoursForDate,
@@ -220,10 +221,39 @@ describe('validateBookingWindow', () => {
     expect(baseline({ date: '2026-08-05', time: '10:00', nowMinutes: NOON })).toEqual({ ok: true });
   });
 
+  describe('on a salon closure', () => {
+    // Thanksgiving 2026 is a Thursday, an ordinarily open day: only the
+    // closures map can be what refuses it.
+    const NOV = { today: '2026-11-19', nowMinutes: NOON };
+
+    it('has no opening hours', () => {
+      expect(hoursForDate('2026-11-26')).toBeNull();
+      expect(hoursForDate('2026-11-27')).toEqual({ open: '09:30', close: '19:00' });
+    });
+
+    it('rejects the booking and names the occasion', () => {
+      expect(baseline({ ...NOV, date: '2026-11-26' })).toEqual({
+        ok: false,
+        code: 'SALON_CLOSED',
+        message: 'The salon is closed on Thursday, November 26 for Thanksgiving.',
+      });
+      expect(closedMessage('2026-11-26')).toBe(
+        'The salon is closed on Thursday, November 26 for Thanksgiving',
+      );
+    });
+
+    it('is skipped when working out the day a stylist is back', () => {
+      // Away the Wednesday before: Thursday is a closure, so back on Friday.
+      expect(timeOffRanges(['2026-11-25'], [])).toEqual([
+        { start: '2026-11-25', end: '2026-11-25', back: '2026-11-27' },
+      ]);
+    });
+  });
+
   describe('when a day is marked closed', () => {
-    // SALON_CLOSED is currently unreachable through the live table (all seven
-    // days are open), so the branch is exercised by closing a day here. If the
-    // owner ever closes Sundays, this is the behaviour they get.
+    // No weekday is closed in the live table, so the weekly branch is exercised
+    // by closing a day here. If the owner ever closes Sundays, this is the
+    // behaviour they get.
     const saved = BUSINESS_HOURS.Sunday;
     afterEach(() => {
       BUSINESS_HOURS.Sunday = saved;

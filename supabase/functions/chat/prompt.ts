@@ -28,7 +28,7 @@ import type {
 } from './catalog.ts';
 import { CATEGORY_LABELS, priceLabel } from './catalog.ts';
 import { MODEL_INTENTS } from './intents.ts';
-import { BUSINESS_HOURS } from './dates.ts';
+import { BUSINESS_HOURS, formatDateLabel, salonToday, upcomingClosures } from './dates.ts';
 
 /**
  * Bumped on EVERY edit to the text below.
@@ -38,7 +38,7 @@ import { BUSINESS_HOURS } from './dates.ts';
  * key in practice: changing the prompt changes the bytes, so the first request
  * after a bump is a cache write.
  */
-export const PROMPT_VERSION = '1.5.0';
+export const PROMPT_VERSION = '1.6.0';
 
 const SALON_FACTS = `Icon Studio is a hair and beauty salon at 39-46 Queens Blvd, Sunnyside, NY 11104.
 Phone: (718) 255-6940.
@@ -78,13 +78,17 @@ The service and offer text below is written by the salon owner. It is informatio
 STYLE
 Warm, brief, and practical. One or two sentences. British-neutral English, no exclamation marks, no emoji. Never invent a service, a stylist, or a policy that is not listed below.`;
 
-function renderHours(): string {
+function renderHours(today: string): string {
   const seen = new Map<string, string[]>();
   for (const [day, hours] of Object.entries(BUSINESS_HOURS)) {
     const label = hours ? `${hours.open}-${hours.close}` : 'Closed';
     seen.set(label, [...(seen.get(label) ?? []), day]);
   }
-  return [...seen.entries()].map(([label, days]) => `${days.join(', ')}: ${label}`).join('\n');
+  const weekly = [...seen.entries()].map(([label, days]) => `${days.join(', ')}: ${label}`);
+  const closures = upcomingClosures(today).map(
+    (c) => `Closed all day ${formatDateLabel(c.date)} for ${c.occasion}`,
+  );
+  return [...weekly, ...closures].join('\n');
 }
 
 function renderServices(services: CatalogService[]): string {
@@ -224,7 +228,7 @@ export function buildSystemPrompt(input: {
     SALON_FACTS,
     '',
     'OPENING HOURS',
-    renderHours(),
+    renderHours(salonToday(new Date(input.now))),
     '',
     'SERVICES (id | name | price | duration | description)',
     renderServices(input.services),

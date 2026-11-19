@@ -2,6 +2,7 @@ import { Suspense, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import Navbar from '@/components/layout/Navbar';
+import ClosureBanner from '@/components/layout/ClosureBanner';
 import Footer from '@/components/layout/Footer';
 import NoIndex from '@/components/NoIndex';
 import { supabase } from '@/api/supabase';
@@ -84,6 +85,7 @@ export default function App() {
           path="*"
           element={
             <>
+              <ClosureBanner />
               <Navbar />
               <main className="flex-1">
                 <Suspense fallback={<PageLoader />}>

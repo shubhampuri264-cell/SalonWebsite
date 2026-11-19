@@ -26,6 +26,17 @@ export const BUSINESS_HOURS: Record<string, OpeningHours | null> = {
 };
 
 /**
+ * Days the whole salon is closed, by YYYY-MM-DD, with the occasion customers
+ * are told. hoursForDate() treats these exactly like a closed weekday, so the
+ * calendar, the slot grid and both booking write paths refuse them together.
+ * Kept in step with packages/shared/src/constants.ts and Iris's
+ * supabase/functions/chat/dates.ts. Past entries are inert and can be pruned.
+ */
+export const SALON_CLOSURES: Readonly<Record<string, string>> = {
+  '2026-11-26': 'Thanksgiving',
+};
+
+/**
  * How far ahead a customer may book. Without an upper bound the endpoint
  * accepts 9999-12-31, which lands a row in the appointments table that no
  * admin view will ever scroll to and that the reminder cron will never reach.
@@ -58,7 +69,19 @@ export function dayOfWeek(dateStr: string): string {
 }
 
 export function hoursForDate(dateStr: string): OpeningHours | null {
+  if (SALON_CLOSURES[dateStr]) return null;
   return BUSINESS_HOURS[dayOfWeek(dateStr)] ?? null;
+}
+
+/**
+ * Why the salon is closed on a day hoursForDate() returned null for, without a
+ * full stop: "The salon is closed on Thursday, November 26 for Thanksgiving".
+ */
+export function closedMessage(dateStr: string): string {
+  const occasion = SALON_CLOSURES[dateStr];
+  return occasion
+    ? `The salon is closed on ${formatDayLabel(dateStr)} for ${occasion}`
+    : 'The salon is closed on this day';
 }
 
 /**
@@ -186,7 +209,7 @@ export function validateBookingWindow(input: {
 
   const hours = hoursForDate(date);
   if (!hours) {
-    return { ok: false, code: 'SALON_CLOSED', message: 'The salon is closed on this day.' };
+    return { ok: false, code: 'SALON_CLOSED', message: `${closedMessage(date)}.` };
   }
 
   const open = toMinutes(hours.open);

@@ -20,6 +20,11 @@ export const BUSINESS_HOURS: Record<string, { open: string; close: string } | nu
   Sunday: { open: '10:00', close: '18:00' },
 };
 
+/** Days the whole salon is closed (YYYY-MM-DD -> occasion). Port of api/_lib/businessHours.ts. */
+export const SALON_CLOSURES: Readonly<Record<string, string>> = {
+  '2026-11-26': 'Thanksgiving',
+};
+
 // en-CA's short date format IS ISO 8601, so no reassembly or zero-padding.
 const dateFormatter = new Intl.DateTimeFormat('en-CA', {
   timeZone: SALON_TIMEZONE,
@@ -68,7 +73,16 @@ export function dayOfWeek(dateStr: string): string {
 }
 
 export function hoursForDate(dateStr: string): { open: string; close: string } | null {
+  if (SALON_CLOSURES[dateStr]) return null;
   return BUSINESS_HOURS[dayOfWeek(dateStr)] ?? null;
+}
+
+/** Closures from `today` on, soonest first. */
+export function upcomingClosures(today: string = salonToday()): Array<{ date: string; occasion: string }> {
+  return Object.entries(SALON_CLOSURES)
+    .filter(([date]) => date >= today)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, occasion]) => ({ date, occasion }));
 }
 
 /** "Thursday, 6 August" — no year, because everything offered is within 180 days. */

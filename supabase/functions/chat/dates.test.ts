@@ -9,9 +9,11 @@ import {
   dayOfWeek,
   formatDaysOff,
   formatTimeOffSpan,
+  isBookableDate,
   isFullDayBlock,
   nextBookableDates,
   timeOffRanges,
+  upcomingClosures,
 } from './dates.ts';
 
 const TODAY = '2026-10-24'; // a Saturday
@@ -65,4 +67,16 @@ Deno.test('only a block covering opening hours counts as time off', () => {
 
 Deno.test('time off reads as the approved wording', () => {
   assertEquals(formatTimeOffSpan(AWAY[0]), 'from Saturday, October 31 to Wednesday, November 4');
+});
+
+Deno.test('Thanksgiving is never offered, even to a stylist who works Thursdays', () => {
+  assertEquals(isBookableDate('2026-11-26', '2026-11-19'), false);
+  const dates = nextBookableDates(8, { days_off: [], time_off: [] }, '2026-11-19');
+  assert(!dates.includes('2026-11-26'));
+  assert(dates.includes('2026-11-27'));
+});
+
+Deno.test('a closure is listed until its day has passed', () => {
+  assertEquals(upcomingClosures('2026-11-26'), [{ date: '2026-11-26', occasion: 'Thanksgiving' }]);
+  assertEquals(upcomingClosures('2026-11-27'), []);
 });

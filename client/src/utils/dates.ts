@@ -1,4 +1,4 @@
-import { BUSINESS_HOURS, type TimeOff } from '@luxe/shared';
+import { BUSINESS_HOURS, SALON_CLOSURES, type TimeOff } from '@luxe/shared';
 
 /** Format a YYYY-MM-DD string to "Monday, March 15, 2026" */
 export function formatDate(dateStr: string): string {
@@ -49,7 +49,37 @@ export function toDateStr(d: Date): string {
 /** Check if the salon is open on a given JS Date */
 export function isSalonOpen(date: Date): boolean {
   const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-  return BUSINESS_HOURS[dayName] !== null;
+  return BUSINESS_HOURS[dayName] !== null && !SALON_CLOSURES[toDateStr(date)];
+}
+
+/** A day the whole salon is closed, and `reopens`, the first open day after it. */
+export interface Closure {
+  date: string;
+  occasion: string;
+  reopens: string;
+}
+
+/** YYYY-MM-DD plus `days`, stepped at local noon so DST cannot shift the day. */
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + days);
+  return toDateStr(d);
+}
+
+/** Closures from `today` (YYYY-MM-DD) through `withinDays` later, soonest first. */
+export function upcomingClosures(today: string, withinDays: number): Closure[] {
+  const last = addDays(today, withinDays);
+  return Object.entries(SALON_CLOSURES)
+    .filter(([date]) => today <= date && date <= last)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, occasion]) => {
+      let reopens = addDays(date, 1);
+      // Bounded so back-to-back closures can never spin forever.
+      for (let i = 0; i < 366 && !isSalonOpen(new Date(reopens + 'T12:00:00')); i++) {
+        reopens = addDays(reopens, 1);
+      }
+      return { date, occasion, reopens };
+    });
 }
 
 /** Check if a JS Date falls on one of a stylist's weekly days off */

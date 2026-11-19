@@ -39,3 +39,9 @@ export const BUSINESS_HOURS: Record<string, { open: string; close: string } | nu
   Saturday:  { open: '09:30', close: '19:00' },
   Sunday:    { open: '10:00', close: '18:00' },
 };
+
+// Days the whole salon is closed (YYYY-MM-DD -> occasion). Mirrors
+// SALON_CLOSURES in api/_lib/businessHours.ts, which is what enforces it.
+export const SALON_CLOSURES: Readonly<Record<string, string>> = {
+  '2026-11-26': 'Thanksgiving',
+};

@@ -13,11 +13,13 @@ import {
   formatDate,
   salonToday,
   toDateStr,
+  upcomingClosures,
 } from '@/utils/dates';
 import { cn } from '@/utils/cn';
 import { supabase } from '@/api/supabase';
 
 const POLL_INTERVAL_MS = 30_000;
+const BOOKING_HORIZON_DAYS = 180; // match api/_lib/businessHours.ts
 
 export default function StepDateTime() {
   const {
@@ -41,7 +43,7 @@ export default function StepDateTime() {
   // Coast it is already tomorrow in New York.
   const today = new Date(salonToday() + 'T00:00:00');
   const lastDay = new Date(today);
-  lastDay.setDate(lastDay.getDate() + 180); // match BOOKING_HORIZON_DAYS in api/_lib/businessHours.ts
+  lastDay.setDate(lastDay.getDate() + BOOKING_HORIZON_DAYS);
 
   const selectedDateObj = selectedDate
     ? new Date(selectedDate + 'T12:00:00')
@@ -50,6 +52,7 @@ export default function StepDateTime() {
   const stylistId = selectedStylist?.id ?? null;
   const daysOff = selectedStylist?.days_off ?? [];
   const timeOff = selectedStylist?.time_off ?? [];
+  const closures = upcomingClosures(salonToday(), BOOKING_HORIZON_DAYS);
 
   // Back skips the stylist step when it was skipped on the way in — with one
   // eligible stylist there is nothing there to change.
@@ -179,6 +182,16 @@ export default function StepDateTime() {
             can't wait to see you again from {formatDayLabel(range.back)}!
           </p>
         ))}
+      {closures.map((c) => (
+        <p
+          key={c.date}
+          className="mt-4 rounded-lg border border-gold-500/30 bg-accent px-4 py-3 text-sm text-foreground/80"
+        >
+          Please note: The salon is closed on {formatDayLabel(c.date)} for{' '}
+          {c.occasion}. We're sorry for any inconvenience and can't wait to see
+          you again from {formatDayLabel(c.reopens)}!
+        </p>
+      ))}
 
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         {/* Calendar */}

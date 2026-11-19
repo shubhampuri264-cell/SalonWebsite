@@ -7,6 +7,7 @@ import { salonToday, salonNowMinutes, addDays } from './_lib/dates';
 import { stylistPerformsService } from './_lib/eligibility';
 import { fetchTimeOff } from './_lib/timeOff';
 import {
+  closedMessage,
   hoursForDate,
   isDayOff,
   dayOfWeek,
@@ -48,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const hours = hoursForDate(date);
-  if (!hours) return res.json({ slots: [], message: 'Salon is closed on this day' });
+  if (!hours) return res.json({ slots: [], message: closedMessage(date) });
 
   // Slots that have already started today are not offerable. Undefined for any
   // future date, where the whole grid from opening time is still live.
