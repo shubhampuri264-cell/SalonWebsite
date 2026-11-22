@@ -8,6 +8,7 @@ import { getStylists } from '@/api/stylists';
 import { useAuthStore } from '@/store/authStore';
 import type { BlockedSlot, Stylist } from '@luxe/shared';
 import { formatDate } from '@/utils/dates';
+import { captureException } from '@/sentry';
 
 const blockSchema = z.object({
   stylist_id: z.string().uuid('Select a stylist'),
@@ -51,7 +52,7 @@ export default function AdminBlockSlots() {
       getStylists().then(setStylists),
     ])
       .catch((err) => {
-        console.error(err);
+        captureException(err, { tags: { area: 'admin', action: 'blocked-slots:load' } });
         setError(messageOf(err, 'Could not load blocked slots. Refresh to try again.'));
       })
       .finally(() => setLoading(false));
@@ -72,7 +73,7 @@ export default function AdminBlockSlots() {
       reset();
       setShowForm(false);
     } catch (err) {
-      console.error(err);
+      captureException(err, { tags: { area: 'admin', action: 'blocked-slots:create' } });
       setError(messageOf(err, 'Could not save the block. The slot is still bookable.'));
     }
   };
@@ -84,18 +85,18 @@ export default function AdminBlockSlots() {
       await deleteBlockedSlot(id, token);
       setBlockedSlots((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
-      console.error(err);
+      captureException(err, { tags: { area: 'admin', action: 'blocked-slots:delete' } });
       setError(messageOf(err, 'Could not delete the block. It is still in effect.'));
     }
   };
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="font-serif text-3xl font-semibold">Blocked Slots</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-serif text-2xl font-semibold md:text-3xl">Blocked Slots</h1>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-2 rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600 transition-colors"
+          className="flex shrink-0 items-center gap-2 rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600 transition-colors"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Add Block
@@ -225,7 +226,7 @@ export default function AdminBlockSlots() {
             No blocked slots. Add one above.
           </p>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">
                 <th className="px-4 py-3 text-left font-medium">Date</th>

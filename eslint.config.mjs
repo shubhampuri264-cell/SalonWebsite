@@ -49,6 +49,14 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser } },
   },
   {
+    // Admin failures used to go to console.error only: the owner tapped a
+    // button, the server refused, and the screen looked as if it had worked.
+    // Errors on these screens go to a banner and to Sentry (see
+    // pages/admin/adminUi.tsx toFailure), never to the console.
+    files: ['client/src/pages/admin/**/*.{ts,tsx}'],
+    rules: { 'no-console': 'error' },
+  },
+  {
     files: ['server/**/*.ts', 'api/**/*.ts', '*.{js,mjs,cjs,ts}'],
     languageOptions: { globals: { ...globals.node } },
   },
@@ -58,5 +66,11 @@ export default tseslint.config(
     files: ['scripts/**/*.{js,mjs,cjs}'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
+    // Puppeteer browser checks (npm run test:admin-ui): node script whose
+    // page.evaluate callbacks run in the browser.
+    files: ['e2e/**/*.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
   }
 );

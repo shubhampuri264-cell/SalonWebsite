@@ -6,12 +6,10 @@
 // can be silently different in production.
 //
 // This existed as three separate private copies (emails.ts, sentry.ts,
-// ratelimit.ts) and was missing entirely from auth.ts, which is the read that
-// mattered most: auth.ts compares OWNER_EMAIL against the caller's JWT email,
-// so a quoted value in the Vercel dashboard makes every admin request 401 with
-// no hint that quoting was the cause. OWNER_EMAIL is also the one quoted key in
-// the local .env, so it was the single most likely value to be pasted with its
-// quotes attached.
+// ratelimit.ts) and was once missing from auth.ts, where a quoted OWNER_EMAIL
+// in the Vercel dashboard made every admin request 401 with no hint that
+// quoting was the cause. (The admin check no longer reads OWNER_EMAIL; it uses
+// the owner role on the account -- see auth.ts checkAdmin.)
 
 /** Strips surrounding single/double quotes and trims whitespace. */
 export function unquote(value: string | undefined): string | undefined {

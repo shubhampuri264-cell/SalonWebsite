@@ -8,29 +8,15 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
 
-  signIn: (identifier: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   setSession: (session: Session | null) => void;
   clearError: () => void;
 }
 
-function resolveLoginEmail(identifier: string): string {
-  const value = identifier.trim();
-  if (value.includes('@')) return value;
-
-  const ownerUsername = (import.meta.env.VITE_OWNER_USERNAME as string | undefined)?.trim();
-  const ownerEmail = (import.meta.env.VITE_OWNER_EMAIL as string | undefined)?.trim();
-
-  if (
-    ownerUsername &&
-    ownerEmail &&
-    value.toLowerCase() === ownerUsername.toLowerCase()
-  ) {
-    return ownerEmail;
-  }
-
-  return value;
-}
+// No owner email or username lives in this file any more: VITE_* values are
+// compiled into the public JS, which published the admin login address to
+// every visitor. Who the owner is gets decided by the server alone.
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -39,23 +25,38 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
 
-      signIn: async (identifier, password) => {
+      signIn: async (email, password) => {
         set({ isLoading: true, error: null });
-        const email = resolveLoginEmail(identifier);
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
+          email: email.trim(),
           password,
         });
         if (error) {
-          set({ isLoading: false, error: error.message });
+          set({
+            isLoading: false,
+            // Same wording for a wrong email and a wrong password, so the
+            // form never confirms which addresses have accounts.
+            error:
+              error.status === 429
+                ? 'Too many sign-in attempts. Wait a few minutes, then try again.'
+                : 'Email or password is incorrect.',
+          });
           return;
         }
         set({ session: data.session, isLoading: false });
       },
 
       signOut: async () => {
-        await supabase.auth.signOut();
-        set({ session: null });
+        // This device only ('local'). The default ('global') would also end
+        // her sessions on every other device -- and some sign-outs here are
+        // automatic (a stale login, "Sign in again"). Ending every session is
+        // an administrator action: supabase/admin/reset-owner-authenticator.sql.
+        // The local copy is cleared even if the network call fails.
+        try {
+          await supabase.auth.signOut({ scope: 'local' });
+        } finally {
+          set({ session: null });
+        }
       },
 
       setSession: (session) => set({ session }),

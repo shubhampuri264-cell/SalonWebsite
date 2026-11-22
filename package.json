@@ -19,6 +19,7 @@
     "test:watch": "vitest",
     "test:edge": "deno test --config supabase/functions/chat/deno.json --allow-env supabase/functions/chat/",
     "test:all": "npm run test && npm run test:edge",
+    "test:admin-ui": "node e2e/admin-ui-check.mjs",
     "check:edge": "deno check --config supabase/functions/chat/deno.json supabase/functions/chat/index.ts evals/run.ts && deno lint --config supabase/functions/chat/deno.json supabase/functions/chat/",
     "eval": "deno run --allow-net --allow-env --allow-read --config supabase/functions/chat/deno.json evals/run.ts",
     "deploy:chat": "supabase functions deploy chat --project-ref anysbhiiwsnuzksrlvtf",

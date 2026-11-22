@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pencil, Check, X, Plus, Eye, EyeOff } from 'lucide-react';
 import { getAdminServices, updateService, createService } from '@/api/adminServices';
 import { useAuthStore } from '@/store/authStore';
 import { SERVICE_CATEGORIES, SERVICE_CATEGORY_LABELS } from '@luxe/shared';
 import type { Service, ServiceCategory } from '@luxe/shared';
 import { cn } from '@/utils/cn';
+import { ActionToast, Banner, Spinner, toFailure, type Feedback } from './adminUi';
 
 interface EditState {
   name: string;
@@ -36,6 +37,9 @@ export default function AdminServices() {
   });
   const [addError, setAddError] = useState<string | null>(null);
   const [addSaving, setAddSaving] = useState(false);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const dismissFeedback = useCallback(() => setFeedback(null), []);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -64,9 +68,14 @@ export default function AdminServices() {
     const priceMin = parseFloat(editState.price_min);
     const priceMax = editState.price_max ? parseFloat(editState.price_max) : null;
     const duration = parseInt(editState.duration_min, 10);
-    if (isNaN(priceMin) || isNaN(duration)) return;
+    const name = editState.name.trim() || 'this service';
+    if (isNaN(priceMin) || isNaN(duration)) {
+      setFeedback({ kind: 'error', message: `Couldn't save ${name} – price and duration must be numbers.` });
+      return;
+    }
 
     setSaving(true);
+    setFeedback(null);
     try {
       const updated = await updateService(id, {
         name: editState.name.trim(),
@@ -77,19 +86,29 @@ export default function AdminServices() {
       }, token);
       setServices((prev) => prev.map((s) => (s.id === id ? updated : s)));
       setEditingId(null);
+      setFeedback({ kind: 'success', message: `Saved ${updated.name}.` });
     } catch (err) {
-      console.error(err);
+      setFeedback(toFailure(err, `Couldn't save ${name}`, { action: 'service:save' }));
     } finally {
       setSaving(false);
     }
   };
 
   const toggleActive = async (s: Service) => {
+    if (togglingId) return;
+    setTogglingId(s.id);
+    setFeedback(null);
     try {
       const updated = await updateService(s.id, { is_active: !s.is_active }, token);
       setServices((prev) => prev.map((x) => (x.id === s.id ? updated : x)));
+      setFeedback({
+        kind: 'success',
+        message: updated.is_active ? `${updated.name} is shown on the website.` : `${updated.name} is hidden from the website.`,
+      });
     } catch (err) {
-      console.error(err);
+      setFeedback(toFailure(err, `Couldn't ${s.is_active ? 'hide' : 'show'} ${s.name}`, { action: 'service:toggle' }));
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -140,21 +159,22 @@ export default function AdminServices() {
   }
 
   if (error) {
-    return <p className="text-destructive">{error}</p>;
+    return <Banner feedback={{ kind: 'error', message: `Couldn't load services (${error}). Refresh to try again.` }} />;
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-3xl font-semibold">Services & Prices</h1>
+      <ActionToast feedback={feedback} onDismiss={dismissFeedback} />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-serif text-2xl font-semibold md:text-3xl">Services & Prices</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Edit prices, durations, and visibility for each service.
           </p>
         </div>
         <button
           onClick={() => setShowAdd((v) => !v)}
-          className="flex items-center gap-2 rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600"
+          className="flex shrink-0 items-center gap-2 rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600"
         >
           <Plus className="h-4 w-4" />
           Add Service
@@ -262,7 +282,7 @@ export default function AdminServices() {
                 {SERVICE_CATEGORY_LABELS[cat]}
               </h2>
               <div className="overflow-x-auto rounded-xl border border-border bg-white">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[640px] text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/50">
                       <th className="px-4 py-3 text-left font-medium">Service</th>
@@ -333,13 +353,15 @@ export default function AdminServices() {
                                 <button
                                   onClick={() => saveEdit(s.id)}
                                   disabled={saving}
+                                  aria-busy={saving}
                                   className="flex items-center gap-1 rounded-md border border-green-300 bg-green-50 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-100 disabled:opacity-50"
                                 >
-                                  <Check className="h-3 w-3" />
+                                  {saving ? <Spinner className="h-3 w-3" /> : <Check className="h-3 w-3" />}
                                   Save
                                 </button>
                                 <button
                                   onClick={cancelEdit}
+                                  disabled={saving}
                                   className="flex items-center gap-1 rounded-md border border-border bg-white px-2 py-1 text-xs font-medium hover:bg-muted"
                                 >
                                   <X className="h-3 w-3" />
@@ -377,10 +399,18 @@ export default function AdminServices() {
                                 </button>
                                 <button
                                   onClick={() => toggleActive(s)}
-                                  className="flex items-center gap-1 rounded-md border border-border bg-white px-2 py-1 text-xs font-medium hover:bg-muted"
+                                  disabled={!!togglingId}
+                                  aria-busy={togglingId === s.id}
+                                  className="flex items-center gap-1 rounded-md border border-border bg-white px-2 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
                                   title={s.is_active ? 'Hide from public' : 'Show to public'}
                                 >
-                                  {s.is_active ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                  {togglingId === s.id ? (
+                                    <Spinner className="h-3 w-3" />
+                                  ) : s.is_active ? (
+                                    <EyeOff className="h-3 w-3" />
+                                  ) : (
+                                    <Eye className="h-3 w-3" />
+                                  )}
                                   {s.is_active ? 'Hide' : 'Show'}
                                 </button>
                               </div>

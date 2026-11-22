@@ -171,9 +171,9 @@ export default function AdminPromotions() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-3xl font-semibold">Promotions</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-serif text-2xl font-semibold md:text-3xl">Promotions</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Offers Iris shows under “Current offers”, quoted word for word. Write the offer exactly
             as customers should read it.
@@ -181,7 +181,7 @@ export default function AdminPromotions() {
         </div>
         <button
           onClick={() => { setShowAdd((v) => !v); setAddError(null); }}
-          className="flex items-center gap-2 rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600"
+          className="flex shrink-0 items-center gap-2 rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Add Promotion
@@ -270,7 +270,7 @@ export default function AdminPromotions() {
       )}
 
       <div className="mt-6 overflow-x-auto rounded-xl border border-border bg-white">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th className="px-4 py-3 text-left font-medium">Promotion</th>

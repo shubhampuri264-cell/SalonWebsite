@@ -14,6 +14,9 @@ regression that can't be patched with another forward migration in time.
 Down-migrations revert **schema**, not **data**. Anything the forward migration
 deleted/transformed is gone. Specifically:
 
+- **022.down**: gives the owner's browser token direct write access to every
+  table again (audit finding M2). It leaves the owner role on her account; to
+  return to email-based admin checks, roll back the app deploy instead.
 - **017.down**: destroys every promotion the owner has written — wording, dates
   and history. To merely stop offers showing, run
   `UPDATE public.promotions SET is_active = FALSE;` instead; it has the same

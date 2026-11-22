@@ -222,8 +222,8 @@ const DEFAULT_OWNER_INBOX = 'ks@iconht.studio';
  * The inbox for owner-facing mail: new-booking notices and contact-form
  * messages.
  *
- * Deliberately separate from OWNER_EMAIL, which is the admin login (see ./auth)
- * and stays on the owner's personal Gmail. Notices used to go there too, and on
+ * Deliberately separate from the owner's admin login, which stays on her
+ * personal Gmail. Notices used to go there too, and on
  * 2026-09-30 they were all accepted by Resend yet never seen: that Gmail was
  * linked to the business inbox only as a "Send mail as" alias, which sends from
  * it but never brings its mail in.
@@ -507,13 +507,17 @@ function buildCancellationHtml(
  * calls the salon to ask. Ported from the legacy Express template at
  * server/src/services/emailService.ts, with HTML escaping and a formatted
  * date (the original interpolated the raw `2026-08-15` / `14:30` columns).
+ *
+ * Also sent when the owner cancels from the admin screen, which shows her
+ * whether the customer was told. Returns false when RESEND_API_KEY is not
+ * set (nothing sent); throws when Resend rejects the send.
  */
 export async function sendCancellationEmail(
   appointment: AppointmentEmailData,
   serviceName: string,
-): Promise<void> {
+): Promise<boolean> {
   const resend = await getResend();
-  if (!resend) return;
+  if (!resend) return false;
   const clientUrl = unquote(process.env.CLIENT_URL) ?? '';
   const dateTimeStr = formatDateTime(appointment.appointment_date, appointment.appointment_time);
   const html = buildCancellationHtml(appointment, serviceName, dateTimeStr, `${clientUrl}/book`);
@@ -524,6 +528,7 @@ export async function sendCancellationEmail(
     'Your Icon Studio Appointment Has Been Cancelled',
     html,
   );
+  return true;
 }
 
 export interface ContactMessage {

@@ -97,11 +97,10 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex items-center justify-center gap-4 border-t border-white/10 pt-6 text-xs text-[#7C7274]">
+        {/* No admin link here: the owner signs in from a bookmarked
+            /admin/login, and nothing on the public site points at it. */}
+        <div className="mt-12 flex items-center justify-center border-t border-white/10 pt-6 text-xs text-[#7C7274]">
           <span>© {new Date().getFullYear()} Icon Studio. All rights reserved.</span>
-          <Link to="/admin/login" className="transition-colors hover:text-gold-400">
-            Owner Login
-          </Link>
         </div>
       </div>
     </footer>
