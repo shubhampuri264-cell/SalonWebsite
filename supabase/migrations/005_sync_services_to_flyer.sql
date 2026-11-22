@@ -23,7 +23,9 @@ SET search_path = public
 AS $$
   SELECT
     auth.role() = 'authenticated'
-    AND lower(coalesce(auth.jwt()->>'email', '')) = lower('sumipuri34@gmail.com');
+    -- Owner login address redacted from this public repo (2026-11-22). Retired
+    -- by 022, which replaces this function with one that returns false.
+    AND lower(coalesce(auth.jwt()->>'email', '')) = lower('REPLACE_WITH_OWNER_LOGIN_EMAIL');
 $$;
 
 -- ---------------------------------------------------------------

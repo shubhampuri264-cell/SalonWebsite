@@ -1,7 +1,7 @@
 -- Approve the owner's authenticator app.
 --
 -- Run ONCE, right after she has set up two-step sign-in (the setup screen,
--- then "Waiting for approval"), and only after confirming with her -- in
+-- then "Almost done"), and only after confirming with her -- in
 -- person or by phone -- that she did it just now. Until this runs, the admin
 -- API refuses every session, hers included (code FACTOR_NOT_APPROVED).
 --

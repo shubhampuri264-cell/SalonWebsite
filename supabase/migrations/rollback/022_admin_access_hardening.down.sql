@@ -26,7 +26,9 @@ SET search_path = public, pg_temp
 AS $$
   SELECT
     auth.role() = 'authenticated'
-    AND lower(coalesce(auth.jwt()->>'email', '')) = lower('sumipuri34@gmail.com');
+    -- Replace with the owner's login address before running (kept out of this
+    -- public repo). Left as is, the function matches nobody: fails safe.
+    AND lower(coalesce(auth.jwt()->>'email', '')) = lower('REPLACE_WITH_OWNER_LOGIN_EMAIL');
 $$;
 
 CREATE POLICY "Owner can manage appointments" ON public.appointments

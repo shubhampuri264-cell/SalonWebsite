@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -34,6 +35,27 @@ describe('admin identity stays out of the public bundle', () => {
     ['a Gmail address', /[a-z0-9._%+-]+@gmail\.com/i],
   ])('no client file contains %s', (_label, pattern) => {
     const offenders = files.filter(({ text }) => pattern.test(text)).map(({ file }) => file.slice(SRC.length));
+    expect(offenders).toEqual([]);
+  });
+});
+
+// The repository is public, so the same rule covers every tracked file:
+// migrations, docs and scripts too. The owner's login address once sat in
+// several SQL files and a doc. Test fixtures may use made-up Gmail addresses
+// (e.g. an "imposter" account), so *.test.* files are skipped.
+describe('no personal Gmail address in the public repository', () => {
+  const root = fileURLToPath(new URL('../../', import.meta.url));
+  const tracked = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' })
+    .split('\0')
+    .filter((file) => file && !/\.test\.[cm]?[jt]sx?$/.test(file) && !/(^|\/)(package-lock\.json|deno\.lock)$/.test(file))
+    .filter((file) => /\.(ts|tsx|js|mjs|cjs|sql|md|json|html|ya?ml|toml|txt)$|^\.env\.example$/.test(file));
+
+  it('scans the tracked files', () => {
+    expect(tracked.length).toBeGreaterThan(100);
+  });
+
+  it('no tracked file contains a Gmail address', () => {
+    const offenders = tracked.filter((file) => /[a-z0-9._%+-]+@gmail\.com/i.test(readFileSync(join(root, file), 'utf8')));
     expect(offenders).toEqual([]);
   });
 });

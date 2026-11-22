@@ -42,6 +42,11 @@
 BEGIN;
 
 -- 1. Owner role -------------------------------------------------------------
+--
+-- Applied to production 2026-11-22. The owner's login address is not kept in
+-- this public repo: to run this on a fresh project, replace both
+-- REPLACE_WITH_OWNER_LOGIN_EMAIL below first. Run unedited, it matches no
+-- account (the placeholder is not a valid email) and stops, changing nothing.
 
 DO $$
 DECLARE
@@ -50,7 +55,7 @@ DECLARE
 BEGIN
   UPDATE auth.users
      SET raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::jsonb) || '{"role": "owner"}'::jsonb
-   WHERE lower(email) = 'sumipuri34@gmail.com';
+   WHERE lower(email) = lower('REPLACE_WITH_OWNER_LOGIN_EMAIL');
   GET DIAGNOSTICS v_updated = ROW_COUNT;
 
   -- Exactly one account, or stop: zero would lock the owner out after the
@@ -63,7 +68,7 @@ BEGIN
   SELECT count(*) INTO v_other_owners
     FROM auth.users
    WHERE raw_app_meta_data->>'role' = 'owner'
-     AND lower(email) <> 'sumipuri34@gmail.com';
+     AND lower(email) <> lower('REPLACE_WITH_OWNER_LOGIN_EMAIL');
   IF v_other_owners > 0 THEN
     RAISE EXCEPTION '% other account(s) carry the owner role; investigate before continuing', v_other_owners;
   END IF;
